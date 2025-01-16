@@ -18,7 +18,7 @@ function Analysis() {
   const [status, setStatus] = useState("")
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [fileType, setFileType] = useState<'txt' | 'img' | 'aud' | null>(null)
-  const progressInterval = useRef<NodeJS.Timer>()
+  const progressInterval = useRef<NodeJS.Timeout>()
 
   const handleUploadClick = () => fileInputRef.current?.click()
 
@@ -113,6 +113,10 @@ function Analysis() {
           action={{
             label: selectedFiles.length ? "Change files" : "Upload file(s)",
             onClick: handleUploadClick,
+          }}
+          secondaryAction={{
+            label: "Type/paste text",
+            onClick: handleUploadClick
           }}
         />
 

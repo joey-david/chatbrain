@@ -1,4 +1,6 @@
 tqdm
 transformers
 openai
-dotenv
+python-dotenv
+flask
+flask-cors

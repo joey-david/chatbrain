@@ -98,7 +98,7 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
     print(f"lines: {len(messages)}")
 
     # Regex to detect header lines. Make sure to exclude 'pin' messages.
-    header_pattern = re.compile(r'^(?!.*pin)(.+?)\s+—\s+(\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{1,2}\s?(?:AM|PM))?$|^(?!.*pin)\S+\s—\s\d{1,2}/\d{1,2}/\d{1,2},\s\d{1,2}:\d{1,2}\s(AM|PM)$')
+    header_pattern = re.compile(r'^(?!.*pin)(.+?)\s+—\s+(Today|Yesterday|\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{1,2}\s?(?:AM|PM))?$|^(?!.*pin)\S+\s—\s\d{1,2}/\d{1,2}/\d{1,2},\s\d{1,2}:\d{1,2}\s(AM|PM)$')
 
     lastIsNickname = False
     current_user = None

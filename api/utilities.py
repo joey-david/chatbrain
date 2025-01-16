@@ -13,6 +13,7 @@ def getTextAnalysis(input_files, start_date=None, end_date=None, start_time=None
     file = input_files[-1]
     file = file.read().decode("utf-8")
     compressed_string, msgCount, n_users, user_list, nickname_list = compressFileForPlatform(file)
+    print(f'Compressed string: {compressed_string}')
     print("Starting LLM analysis...")
     json, response = llm_analysis.promptToJSON(prompt=compressed_string, users=user_list, nicknames=nickname_list, maxOutputTokens=2000)
     print("LLM analysis complete ✅")

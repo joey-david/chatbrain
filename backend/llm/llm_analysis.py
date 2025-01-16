@@ -98,10 +98,10 @@ def promptToJSON(prompt, maxOutputTokens, users, nicknames, model_name="deepseek
 
   #check for outsanding prices, get general token information
   price, tokenCount = dtok.apiCallPrice(prompt + systemPrompt, maxOutputTokens, model_name)
+  print(f"Token count: {tokenCount}")
   if price > 0.001:
     print(f"Warning: This API call will cost ${price:.4f} USD.")
-  print(f"Token count: {tokenCount}")
-
+    
   # make the API call
   response = api_call("deepseek-chat", maxOutputTokens, prompt, systemPrompt)
   if response.choices[0].message.refusal != None:
