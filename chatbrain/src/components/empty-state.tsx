@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LucideIcon } from "lucide-react"
+import { LucideIcon, TextSelect, Paperclip } from "lucide-react"
 
 export interface EmptyStateProps {
   title: string
@@ -68,140 +68,29 @@ export function EmptyState({
             onClick={action.onClick}
             variant="outline"
             className={cn(
-              "mt-4 mr-2",
-              "shadow-sm active:shadow-none text-black"
+              "mt-4 mr-2 gap-2",
+              "shadow-lg active:shadow-none text-black"
             )}
           >
-            {action.label}
+            <>
+              <Paperclip className="w-5 h-5" /> {action.label}
+            </>
           </Button>
         )}
         {secondaryAction && (
           <Button
             onClick={secondaryAction.onClick}
-            variant="outline"
             className={cn(
-              "mt-4 ml-2",
-              "shadow-sm active:shadow-none text-black"
+              "mt-4 mr-2 gap-2",
+              "shadow-lg active:shadow-none text-white bg-primary outline-primary"
             )}
           >
-            {secondaryAction.label}
+            <>
+              <TextSelect className="w-5 h-5" /> {secondaryAction.label}
+            </>
           </Button>
         )}
       </div>
     </div>
   )
 }
-
-// ...existing code...
-import { useState, useRef, useEffect } from "react"
-import { validateFiles } from "@/utils/fileValidation"
-import { MetadataAnalysis } from "@/components/metadataAnalysis"
-import { LLMAnalysis } from "@/components/LLMAnalysis"
-import { MetadataResults } from "@/components/metadataResults"
-import { LLMResults } from "@/components/LLMResults"
-import { EmptyState } from "@/components/empty-state"
-import { PhoneCall, Image, Mic } from "lucide-react"
-import { LoadingBar } from "@/components/ui/loadingBar"
-import { Button } from "@/components/ui/button"
-
-// ...existing state and code...
-
-function Analysis() {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [metadataResults, setMetadataResults] = useState(null)
-  const [llmResults, setLlmResults] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState("")
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [fileType, setFileType] = useState<'txt' | 'img' | 'aud' | null>(null)
-
-// ...existing code...
-
-  const [showTextInput, setShowTextInput] = useState(false)
-  const [typedText, setTypedText] = useState("")
-
-  const handleUploadClick = () => fileInputRef.current?.click()
-
-  const handleSendText = () => {
-    if (!typedText.trim()) return
-    const blob = new Blob([typedText], { type: "text/plain" })
-    const file = new File([blob], "input.txt", { type: "text/plain" })
-    try {
-      validateFiles([file])
-      setSelectedFiles([file])
-      setFileType("txt")
-      setIsLoading(true)
-      setShowTextInput(false)
-    } catch (error) {
-      console.error("Validation error:", error)
-    }
-  }
-
-// ...file select, effects, etc...
-
-  return (
-    <main className="p-8 flex flex-col items-center">
-      <div className="bg-muted/60 border-border text-center border-2 rounded-xl p-14 justify-center items-center flex flex-col">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          multiple
-          onChange={handleFileSelect}
-        />
-        {!showTextInput && (
-          <EmptyState
-            title={selectedFiles.length ? `Selected: ${selectedFiles[0].name}` : "No Files Uploaded"}
-            description={
-              selectedFiles.length
-                ? `${selectedFiles.length} file(s) selected - ${fileType?.toUpperCase() || 'Unknown'} type`
-                : "Please upload an exported whatsapp chat, screenshots, or an audio recording."
-            }
-            icons={[Image, PhoneCall, Mic]}
-            action={{
-              label: selectedFiles.length ? "Change files" : "Upload file(s)",
-              onClick: handleUploadClick,
-            }}
-            secondaryAction={{
-              label: "Type/paste text",
-              onClick: () => setShowTextInput(true)
-            }}
-          />
-        )}
-        {showTextInput && (
-          <div className="max-w-md w-full flex flex-col items-center space-y-4">
-            <textarea
-              className="border p-2 w-full rounded"
-              rows={6}
-              placeholder="Type or paste your text here..."
-              value={typedText}
-              onChange={(e) => setTypedText(e.target.value)}
-            />
-            <Button onClick={handleSendText}>Send</Button>
-          </div>
-        )}
-
-        {metadataResults && (
-          <div className="max-w-5xl mt-6 w-full">
-            <MetadataResults data={metadataResults} />
-          </div>
-        )}
-        {isLoading && <LoadingBar progress={progress} status={status} />}
-        {!isLoading && llmResults && (
-          <div className="max-w-5xl mt-6 w-full">
-            <LLMResults data={llmResults} />
-          </div>
-        )}
-        {selectedFiles.length > 0 && (
-          <>
-            <MetadataAnalysis files={selectedFiles} onComplete={setMetadataResults} />
-            <LLMAnalysis files={selectedFiles} onComplete={setLlmResults} onLoading={setIsLoading} />
-          </>
-        )}
-      </div>
-    </main>
-  )
-}
-
-// ...existing export...

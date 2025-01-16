@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { FileCode, Brain, PhoneCall, ImageIcon, Mic } from "lucide-react";
+import { FileCode, Brain, TextSelect, ImageIcon, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function Home() {
   const [titleNumber, setTitleNumber] = useState(0);
   const titles = useMemo(
     () => [
-      { label: "Whatsapp", icon: PhoneCall },
+      { label: "Text Logs", icon: TextSelect },
       { label: "Screenshots", icon: ImageIcon },
       { label: "Voice Messages", icon: Mic },
     ],
@@ -55,22 +55,22 @@ function Home() {
       <p className="text-slate-300 md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-5xl mx-auto">
         Get a truly impartial outlook on your conversations, no matter the platform.<br></br>
         Receive a grading on a variety of conversational metrics, and see how you can improve.<br></br>
-        chatbrain is fully <a href="https://github.com/joey-david/py-scripts/tree/main/chatbrain" className="font-bold underline text-indigo-300">open-source</a> and stores none of your data beyond the session.
+        chatbrain is fully <a href="https://github.com/joey-david/chatbrain" className="font-bold underline text-indigo-300">open-source</a> and stores none of your data beyond the session.
       </p>
       </div>
       <div className="flex gap-3">
       <a
-        href="https://github.com/joey-david/py-scripts/tree/main/chatbrain"
+        href="https://github.com/joey-david/chatbrain"
         target="_blank"
         className="inline-block"
       >
-        <Button size="lg" className="gap-4 w-full text-base" variant="secondary">
-        View the code <FileCode className="h-6 w-6" />
+        <Button size="lg" className="gap-2 w-full text-base px-4" variant="secondary">
+        <FileCode className="h-6 w-6" /> View the code
         </Button>
       </a>
       <a href="/analysis" className="inline-block">
-        <Button size="lg" className="gap-4 w-full text-base">
-        Start a free analysis <Brain className="h-6 w-6" />
+        <Button size="lg" className="gap-3 w-full text-base">
+        <Brain className="h-6 w-6" /> Start a free analysis
         </Button>
       </a>
       </div>

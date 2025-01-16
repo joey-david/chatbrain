@@ -14,7 +14,7 @@ function Footer() {
             <p className="text-base md:text-lg mb-4 font-medium tracking-wide">
                 {currentYear}{' | '}
                 <a
-                    href="https://github.com/joey-david/py-scripts/tree/main/chatbrain"
+                    href="https://github.com/joey-david/chatbrain"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-foreground transition-all text-slate-300"
