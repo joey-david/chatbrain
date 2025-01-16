@@ -1,0 +1,85 @@
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0;
+  z-index: 1;
+}
+
+/* Animated gradient background */
+.background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  transform: translateZ(-1px) scale(1.5); /* Parallax effect */
+  perspective: 50px;
+}
+
+.gradient {
+  --size: 500px;
+  --speed: 20s;
+  --easing: cubic-bezier(0.8, 0.2, 0.2, 0.8);
+  --transition-speed: 1.2s;
+
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  filter: blur(calc(var(--size) / 5));
+  background-image: linear-gradient(hsl(234, 100%, 80%), hsl(256, 100%, 22%));
+  animation: rotate var(--speed) alternate infinite;
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  left: calc(50% - var(--size) / 2);
+  top: calc(50% - var(--size) / 2);
+
+  transition: 
+    height var(--transition-speed) ease-out,
+    width var(--transition-speed) ease-out,
+    left var(--transition-speed) ease-out,
+    top var(--transition-speed) ease-out;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 40px) {
+  .gradient {
+    --size: 32rem;
+  }
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(3px);
+}
+
+main {
+  flex-grow: 1;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+footer {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+header, main, footer {
+  transition: all 0.5s ease-out;
+}

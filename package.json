@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@types/node": "^22.10.6",
+    "canvas": "^3.0.1"
+  }
+}
