@@ -79,6 +79,9 @@ def metadata_analysis(compressed_string: str, usernames: List[str], nicknames: L
             "average_message_length": round(char_count / msg_count, 2) if msg_count else 0
         }
 
+    if results == {"total_messages": 0, "total_characters": 0}:
+        logging.warning("No valid metadata found in the chat file.")
+
     return results
 
 if __name__ == "__main__":

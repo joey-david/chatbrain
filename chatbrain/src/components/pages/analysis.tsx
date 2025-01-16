@@ -5,7 +5,7 @@ import { LLMAnalysis } from "@/components/LLMAnalysis"
 import { MetadataResults } from "@/components/metadataResults"
 import { LLMResults } from "@/components/LLMResults"
 import { EmptyState } from "@/components/empty-state"
-import { PhoneCall, Image, Mic, ArrowUpFromLine, Undo2, Undo } from "lucide-react"
+import { TextIcon, Image, Mic, ArrowUpFromLine, Undo2, Undo } from "lucide-react"
 import { LoadingBar } from "@/components/ui/loadingBar"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,9 @@ function Analysis() {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.length) return
     const files = Array.from(event.target.files)
+    // Clear any existing interval first}
+    setMetadataResults(null)
+    setLlmResults(null)
 
     try {
       validateFiles(files)
@@ -112,40 +115,45 @@ function Analysis() {
   }, [isLoading, metadataResults, llmResults])
 
   return (
-    <main className="p-8 flex flex-col items-center">
-      <div className="bg-muted/60 border-border text-center border-2 rounded-xl p-14 justify-center items-center flex flex-col">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          multiple
-          onChange={handleFileSelect}
+    <div className="
+        bg-muted/60 border-border text-center border-2 rounded-xl p-14
+        items-center flex flex-col
+        transition-all duration-300 ease-in-out
+        overflow-hidden
+      "
+      >
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        multiple
+        onChange={handleFileSelect}
+      />
+      {!showTextInput && (
+        <EmptyState
+          title={selectedFiles.length ? `Selected: ${selectedFiles[0].name}` : "No Files Uploaded"}
+          description={
+            selectedFiles.length
+              ? `${selectedFiles.length} file(s) selected - ${fileType?.toUpperCase() || 'Unknown'} type`
+              : "Please upload a chat log, screenshots, or an audio recording."
+          }
+          icons={[Image, TextIcon, Mic]}
+          action={{
+            label: selectedFiles.length ? "Change files" : "Upload file(s)",
+            onClick: handleUploadClick,
+          }}
+          secondaryAction={{
+            label: "Type/paste text",
+            onClick: () => setShowTextInput(true)
+          }}
         />
-        {!showTextInput && (
-          <EmptyState
-            title={selectedFiles.length ? `Selected: ${selectedFiles[0].name}` : "No Files Uploaded"}
-            description={
-              selectedFiles.length
-                ? `${selectedFiles.length} file(s) selected - ${fileType?.toUpperCase() || 'Unknown'} type`
-                : "Please upload an exported whatsapp chat, screenshots, or an audio recording."
-            }
-            icons={[Image, PhoneCall, Mic]}
-            action={{
-              label: selectedFiles.length ? "Change files" : "Upload file(s)",
-              onClick: handleUploadClick,
-            }}
-            secondaryAction={{
-              label: "Type/paste text",
-              onClick: () => setShowTextInput(true)
-            }}
-          />
-        )}
-        {showTextInput && (
-            <div className={cn(
-              "bg-muted/0 border-border text-center",
-              "border-2 border-dashed rounded-xl p-2 w-full w-[550px]",
-              "group transition duration-300 ease-in-out hover:duration-200"
-              )}>
+      )}
+      {showTextInput && (
+          <div className={cn(
+            "bg-muted/0 border-border text-center",
+            "border-2 border-dashed rounded-xl p-2 w-[550px]",
+            "group transition duration-300 ease-in-out hover:duration-200"
+            )}>
             <textarea
               className="bg-muted/0 border-none p-2 w-full rounded text-black resize-none placeholder-gray-500 focus:outline-none"
               rows={10}
@@ -164,28 +172,25 @@ function Analysis() {
                 <ArrowUpFromLine className="w-4 gap-2"/> Send
               </Button>
             </div>
-            </div>
-        )}
+          </div>
+      )}
 
-        {metadataResults && (
-          <div className="max-w-5xl mt-6 w-full">
-            <MetadataResults data={metadataResults} />
-          </div>
-        )}
-        {isLoading && <LoadingBar progress={progress} status={status} />}
-        {!isLoading && llmResults && (
-          <div className="max-w-5xl mt-6 w-full">
-            <LLMResults data={llmResults} />
-          </div>
-        )}
-        {selectedFiles.length > 0 && (
-          <>
-            <MetadataAnalysis files={selectedFiles} onComplete={setMetadataResults} />
-            <LLMAnalysis files={selectedFiles} onComplete={setLlmResults} onLoading={setIsLoading} />
-          </>
-        )}
-      </div>
-    </main>
+      {metadataResults && (
+          <MetadataResults data={metadataResults} />
+      )}
+      {isLoading && <LoadingBar progress={progress} status={status} />}
+      {!isLoading && llmResults && (
+        <div className="max-w-5xl mt-6 w-full">
+          <LLMResults data={llmResults} />
+        </div>
+      )}
+      {selectedFiles.length > 0 && (
+        <>
+          <MetadataAnalysis files={selectedFiles} onComplete={setMetadataResults} />
+          <LLMAnalysis files={selectedFiles} onComplete={setLlmResults} onLoading={setIsLoading} />
+        </>
+      )}
+    </div>
   )
 }
 

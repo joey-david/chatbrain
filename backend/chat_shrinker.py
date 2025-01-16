@@ -69,7 +69,7 @@ def detect_platform(file):
         messages = file.read().decode('utf-8').splitlines()
     if any(re.match(r'^(\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{1,2}(?:\s?(?:AM|PM))?)?\s*-\s*(.*?):\s*(.*)$', line) for line in messages):
         return "whatsapp"
-    if any(re.match(r'\S+\s—\s\S+\sat\s\d{1,2}:\d{1,2}\s(AM|PM)', line) for line in messages) or \
+    if any(re.match(r'\S+\s—\s\S+\s(at|à)\s\d{1,2}:\d{1,2}\s(AM|PM)', line) for line in messages) or \
         any(re.match(r'\S+\s—\s\d{1,2}/\d{1,2}/\d{1,2},\s\d{1,2}:\d{1,2}\s(AM|PM)', line) for line in messages):
         return "discord"
     return "wrong"
@@ -95,10 +95,13 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
     else:
         messages = file.read().decode('utf-8').splitlines()
 
-    print(f"lines: {len(messages)}")
+    print(f"backend/chat_shrinker: shrink_discord_chat found {len(messages)} lines.")
 
-    # Regex to detect header lines. Make sure to exclude 'pin' messages.
-    header_pattern = re.compile(r'^(?!.*pin)(.+?)\s+—\s+(Today|Yesterday|\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{1,2}\s?(?:AM|PM))?$|^(?!.*pin)\S+\s—\s\d{1,2}/\d{1,2}/\d{1,2},\s\d{1,2}:\d{1,2}\s(AM|PM)$')
+    # Regex to detect header lines. Make sure to exclude 'pinned' messages.
+    header_pattern = re.compile(
+        r'^(?!.*\b(pin|image|icon)\b)([^—]+)\s+—\s+(Today|Yesterday)\s+at\s+([0-9]{1,2}:[0-9]{2})\s+(AM|PM)'
+        r'|^(?!.*\b(pin|image|icon)\b)([^—]+)\s+—\s+([0-9]{1,2}/[0-9]{1,2}/[0-9]{2}),\s+([0-9]{1,2}:[0-9]{2})\s+(AM|PM)'
+    )
 
     lastIsNickname = False
     current_user = None
@@ -108,18 +111,22 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
     for line in messages:
         line_stripped = line.strip()
         match = header_pattern.match(line_stripped)
-        msgCount += 1
-        if msgCount > 1000:
-            raise Exception("Timeframe too wide, too many messages")
         if match:
             # We have a new user/date/time header
-            if match.groups().__len__() == 4:
-                user_raw, date_str, hour_str = match.groups()[0], match.groups()[1], match.groups()[2]
-                current_datetime = parse_datetime(date_str, hour_str)
-                # # Break if beyond end date/time
-                # if end_datetime and current_datetime and current_datetime > end_datetime:
-                #     break
-                # Assign or reuse nickname
+            if match.group(1):  # "Today"/"Yesterday" branch
+                user_raw = match.group(1).strip()
+                date_str = match.group(2).strip()
+                hour_str = match.group(3).strip() + " " +match.group(4).strip()
+                if date_str in ["Today", "Aujourd'hui", "Heute", "Hoy", "Oggi", "今日"]:
+                    date_str = datetime.now().strftime("%m/%d/%Y")
+                elif date_str in ["Yesterday", "Hier", "Gestern", "Ayer", "Ieri", "昨日"]:
+                    date_str = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
+                else:
+                    raise ValueError("Date was given as a single word, but isn't 'Today' or 'Yesterday'")
+            else :  # date branch
+                user_raw = match.group(5).strip()
+                date_str = match.group(6).strip()
+                hour_str = match.group(7).strip() + " " + match.group(8).strip()
             if user_raw not in name_to_nickname:
                 nickname = create_nickname(user_raw, used_nicknames)
                 name_to_nickname[user_raw] = nickname
@@ -129,15 +136,16 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
                 nickname = name_to_nickname[user_raw]
                 current_user = nickname
                 # Show date/time if more than 1 hour from last or first time
+            current_datetime = parse_datetime(date_str, hour_str)
             if last_datetime is None or (current_datetime - last_datetime) > timedelta(hours=1):
                 date_out = date_str
-                hour_out = hour_str
+                hour_out = f"{hour_str}"
                 last_datetime = current_datetime
             else:
                 date_out = ""
                 hour_out = ""
                 # Just a header line, no actual message content
-            line_out = ((date_out + " " + hour_out).strip() + " - " if (date_out or hour_out) else "") + f"{current_user}: "
+            line_out = (date_out + " " + hour_out + " - " if (date_out or hour_out) else "") + f"{current_user}: "
             result.append(line_out)
             lastIsNickname = True
 
@@ -154,6 +162,11 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
                 lastIsNickname = False
             else:
                 result.append(line_out)
+                msgCount += 1
+                if msgCount == 1000:
+                    print("WARNING: This chat contains more than 1000 messages.")
+                if msgCount > 100000:
+                    raise ValueError("This chat contains more than 100,000 messages. Please shrink the chat before uploading.")
 
     result_str = "\n".join(result)
     if output_file is not None:
@@ -187,6 +200,9 @@ def shrink_whatsapp_chat(file, start_date=None, end_date=None, start_time=None, 
     else:
         messages = file.read().decode('utf-8').splitlines()
 
+    print(f"backend/chat_shrinker: shrink_whatsapp_chat found {len(messages)} lines.")
+
+
     start_index = search_start(messages, start_datetime) if start_datetime else 0
     msgCount = 0
 
@@ -198,10 +214,6 @@ def shrink_whatsapp_chat(file, start_date=None, end_date=None, start_time=None, 
             continue
         if end_datetime and message_datetime > end_datetime:
             break
-
-        msgCount += 1
-        if msgCount > 1000:
-            raise Exception("Timeframe too wide, too many messages")
         
         pattern = r'^(\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{1,2}(?:\s?(?:AM|PM))?)?\s*-\s*(.*?):\s*(.*)$'
         match = re.match(pattern, line)
@@ -229,7 +241,11 @@ def shrink_whatsapp_chat(file, start_date=None, end_date=None, start_time=None, 
 
         line_out = ((date_out + " " + hour_out).strip() + " - " if (date_out or hour_out) else "") + f"{nickname}: {message}"
         result.append(line_out)
-
+        msgCount += 1
+        if msgCount == 1000:
+            print("WARNING: This chat contains more than 1000 messages.")
+        if msgCount > 100000:
+            raise ValueError("This chat contains more than 100,000 messages. Please shrink the chat before uploading.")
     result_str = "\n".join(result)
     if output_file is not None:
         with open(output_file, "w", encoding="utf-8") as fout:
@@ -251,13 +267,27 @@ if __name__ == "__main__":
     start_time = "12:00 AM"
     end_time = "11:59 PM"
     # get a file from a path
-    file_path = "./data/martin_discord.txt"
+    file_path = "./data/sucide_discord.txt"
     with open(file_path, "r") as f:
         file = f.read()
     print(f"detect_platform: {detect_platform(file)}")
+
+
+
+    line = """Tallyboy3 — 9/27/24, 4:58 PM""".strip()
+    print(line)
+    header_pattern = re.compile(
+        r'^([^—]+)\s+—\s+(Today|Yesterday)\s+at\s+([0-9]{1,2}:[0-9]{2})\s+(AM|PM)'
+        r'|^([^—]+)\s+—\s+([0-9]{1,2}/[0-9]{1,2}/[0-9]{2}),\s+([0-9]{1,2}:[0-9]{2})\s+(AM|PM)'
+    )
+
+    match = header_pattern.match(line)
+
+    print(match.groups())
+
     file, msgCount, n_users, user_list, nickname_list = shrink_discord_chat(
         file, start_date, end_date, start_time, end_time)
-    with open("./data/martin_shrinked.txt", "w") as f:
+    with open("./data/discord_shrunk.txt", "w") as f:
         f.write(file)
     print(f"Messages: {msgCount}")
     print(f"Number of users: {n_users}")

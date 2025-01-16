@@ -38,6 +38,28 @@ def calculate_api_cost(chat_completion):
   return total_cost
 
 def getSystemPrompt(users, nicknames):
+  
+  if len(users) == len(nicknames) == 0:
+    user_details = """Since this file contains no user information, do your best to find the users' names from the prompt.
+      If you absolutely can't, name them User1, User2, etc."""
+    user_metrics = """
+      for each user in the conversation:
+        username: {{
+      "assertiveness": int,
+      "positiveness": int,
+      "affection_towards_other": int,
+      "romantic_attraction_towards_other": int,
+      "rationality": int,
+      "emotiveness": int,
+      "IQ_estimate": int
+    }}"""
+      
+
+
+  if len(users) != len(nicknames):
+    raise ValueError("Number of users and nicknames must match.")
+  
+
   user_details = "\n".join([f"{i+1}) {user} (nickname: {nickname})" for i, (user, nickname) in enumerate(zip(users, nicknames))])
   user_metrics = "\n".join([f"""
     "{user}": {{
@@ -99,8 +121,9 @@ def promptToJSON(prompt, maxOutputTokens, users, nicknames, model_name="deepseek
   #check for outsanding prices, get general token information
   price, tokenCount = dtok.apiCallPrice(prompt + systemPrompt, maxOutputTokens, model_name)
   print(f"Token count: {tokenCount}")
-  if price > 0.001:
+  if price > 0.002:
     print(f"Warning: This API call will cost ${price:.4f} USD.")
+    raise ValueError("API call price exceeds $0.002 USD.")
     
   # make the API call
   response = api_call("deepseek-chat", maxOutputTokens, prompt, systemPrompt)
@@ -125,22 +148,22 @@ def api_call(model, maxOutputTokens, userPrompt, systemPrompt=None):
   # TODO: reimplement standard api call
   # print(f"System prompt: {systemPrompt}")
   # print(f"User prompt: {userPrompt}")
-  response = client.chat.completions.create(
-    model=model,
-    messages=[
-      {"role": "system", "content": systemPrompt},
-      {"role": "user", "content": userPrompt}
-    ],
-    max_tokens=maxOutputTokens,
-    response_format={'type': 'json_object'}
-  )
-  # pickle the response object
-  with open("chat_completion.pkl", "wb") as f:
-    pickle.dump(response, f)
+  # response = client.chat.completions.create(
+  #   model=model,
+  #   messages=[
+  #     {"role": "system", "content": systemPrompt},
+  #     {"role": "user", "content": userPrompt}
+  #   ],
+  #   max_tokens=maxOutputTokens,
+  #   response_format={'type': 'json_object'}
+  # )
+  # # pickle the response object
+  # with open("chat_completion.pkl", "wb") as f:
+  #   pickle.dump(response, f)
 
   # extract the response object from the pickle file
-  # with open("chat_completion.pkl", "rb") as f:
-  #   response = pickle.load(f)
+  with open("chat_completion.pkl", "rb") as f:
+    response = pickle.load(f)
 
   return (response)
 

@@ -14,7 +14,7 @@ export function FeaturesSectionWithHoverEffects() {
       icon: <PhoneCall />,
     },
     {
-      title: "With an exported Whatsapp chat",
+      title: "With an exported chat",
       description:
         "TODO: Add description",
       icon: <Image />,

@@ -1,4 +1,5 @@
 import React from "react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts"
 
 interface UserData {
   messages: number
@@ -13,49 +14,80 @@ interface MetadataAnalysisResults {
   [username: string]: number | UserData // For user-specific stats
 }
 
-const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-card text-card-foreground rounded-2xl shadow-sm ${className || ""}`}>
-    {children}
-  </div>
-)
-
 export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
+  if (data.total_characters === 0) {
+    return (
+      <div className="inline-flex flex-col justify-center items-center border border-white mx-auto px-4 mt-10">
+        <p className="text-center text-md mt-3">
+          Since there is was no conventional formatting to your input, its metadata could not be parsed.
+        </p>
+        <p className="text-center text-md">
+          To get a comprehensive analysis, please use the following format at the start of each line :
+        </p>
+        <p className="text-center text-md mt-5 mb-1">
+          <code className="">John — 01/02/25, 12:34 AM: *message from the user*</code>
+        </p>
+      </div>
+    )
+  }
+
   const userKeys = Object.keys(data).filter(
     (key) => key !== "total_messages" && key !== "total_characters"
   )
-
-  return (
-    <Card className="w-full max-w-5xl mx-auto space-y-8 mt-6 bg-card/0 transition duration-300 ease-in-out">
-      {/* Global stats */}
-      <div className="flex justify-center w-full">
-        <Card className="bg-card/40 border-2 w-full max-w-xl">
-          <div className="p-6">
-            <h2 className="text-xl font-bold mb-6">Global Metrics</h2>
-            <div className="mb-2">Total Messages: {data.total_messages}</div>
-            <div className="mb-2">Total Characters: {data.total_characters}</div>
+    // Define the metrics (categories) to plot
+    const categories = [
+      { key: "messages", label: "number of messages sent" },
+      { key: "percentage_messages", label: "total messages sent %" },
+      { key: "percentage_characters", label: "total chars. typed %" },
+      { key: "average_message_length", label: "avg chars./message" }
+    ]
+  
+    // Pivot the data so that each category is on the x-axis, with each user as a series
+    const chartData = categories.map(({ key, label }) => {
+      const row: any = { category: label }
+      userKeys.forEach((username) => {
+        const userStats = data[username] as UserData
+        row[username] = userStats[key as keyof UserData]
+      })
+      return row
+    })
+  
+    // Simple color palette for each user
+    const colorPalette = ["rgb(51, 35, 124) ", "rgb(46, 140, 183)", "rgb(126, 89, 120) ", "rgb(95, 139, 126)", "rgb(90, 44, 44)"]
+  
+    return (
+      <div className="w-full justify-center space-y-8 mt-6 bg-card/0 transition duration-300 ease-in-out">
+        {/* Global stats */}
+        <div className="flex justify-center w-full">
+          <div className="flex flex-col items-center justify-center px-12 py-4 border rounded-lg bg-card/40 max-w-xl">
+          <h2 className="text-xl font-bold mb-4 text-black">Global Metrics</h2>
+          <div className="mb-2 text-black">Total Messages: {data.total_messages}</div>
+          <div className="mb-2 text-black">Total Characters: {data.total_characters}</div>
           </div>
-        </Card>
+        </div>
+        <div className="flex justify-center w-full">
+          <div className="w-[52rem] h-96 bg-card/40 rounded-lg border-2 p-4">
+            <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} width={1152}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {userKeys.map((user, index) => (
+              <Bar
+              key={user}
+              dataKey={user}
+              fill={colorPalette[index % colorPalette.length]}
+              name={user}
+              />
+              ))}
+            </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
-      
-      {/* Per-user stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {userKeys.map((username) => {
-          const userStats = data[username] as UserData
-          return (
-            <Card key={username} className="bg-card/40 border-2">
-              <div className="p-6">
-                <h3 className="text-lg font-bold mb-4">{username}</h3>
-                <div>Messages: {userStats.messages}</div>
-                <div>Percent of Messages: {userStats.percentage_messages} %</div>
-                <div>Percent of Characters: {userStats.percentage_characters} %</div>
-                <div>Avg Message Length: {userStats.average_message_length}</div>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-    </Card>
-  )
-}
+    )
+  }
 
 export default MetadataResults

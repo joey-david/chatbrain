@@ -91,7 +91,7 @@ export function LLMResults({ data }: { data: ResultsData }) {
           <div className="p-6">
         <h2 className="text-xl font-bold mb-6">Conversation Metrics</h2>
         <ScoreRow label="Stability" value={conversation_metrics.stability_score_out_of_100} />
-        <ScoreRow label="Health" value={conversation_metrics.health_score_out_of_100} />
+        <ScoreRow label="Healthiness" value={conversation_metrics.health_score_out_of_100} />
         <ScoreRow label="Intensity" value={conversation_metrics.intensity_score_out_of_100} />
           </div>
         </Card>

@@ -59,18 +59,18 @@ function Home() {
       </p>
       </div>
       <div className="flex gap-3">
+      <a href="/analysis" className="inline-block">
+        <Button size="lg" className="gap-3 w-full text-base"  variant="secondary">
+        <Brain className="h-6 w-6" /> Start analyzing
+        </Button>
+      </a>
       <a
         href="https://github.com/joey-david/chatbrain"
         target="_blank"
         className="inline-block"
       >
-        <Button size="lg" className="gap-2 w-full text-base px-4" variant="secondary">
-        <FileCode className="h-6 w-6" /> View the code
-        </Button>
-      </a>
-      <a href="/analysis" className="inline-block">
         <Button size="lg" className="gap-3 w-full text-base">
-        <Brain className="h-6 w-6" /> Start a free analysis
+        <FileCode className="h-6 w-6" /> How it works
         </Button>
       </a>
       </div>

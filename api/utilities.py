@@ -27,12 +27,20 @@ def getTextMetadata(input_files):
     print(metadata)
     return metadata
 
+def fileToText(file):
+    # if the file is not a string
+    if type == 'file':
+        file = file.read().decode("utf-8")
+    return file
+
 def compressFileForPlatform(file):
     platform = chat_shrinker.detect_platform(file)
     print(f"Platform detected: {platform}")
     if platform == "discord":
-        return chat_shrinker.shrink_discord_chat(file)
+        return chat_shrinker.shrink_discord_chat(file, output_file="./data/discord_shrunk.txt")
     elif platform == "whatsapp":
-        return chat_shrinker.shrink_whatsapp_chat(file)
+        return chat_shrinker.shrink_whatsapp_chat(file, output_file="./data/whatsapp_shrunk.txt")
     else:
-        raise Exception("Unsupported platform")
+        print(f"Caution ! Platform not supported yet.")
+        string = fileToText(file)
+        return string, 0, 0, [], []        
