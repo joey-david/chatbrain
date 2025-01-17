@@ -75,6 +75,19 @@ def drag_annotate(img):
 
 
 
+def visualize_boxes(img, boxes):
+    """Visualize the boxes on the image."""
+    colors = {0: (0, 0, 255), 1: (0, 255, 0), 2: (0, 255, 255)}
+    if img.shape[0] != 800:
+        img = cv2.resize(img, (int(800 * img.shape[1] / img.shape[0]), 800))
+    for x1, y1, x2, y2, t, idx in boxes:
+        cv2.rectangle(img, (x1, y1), (x2, y2), colors[t], 2)
+        if t != 2:
+            cv2.putText(img, str(idx), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[t], 2)
+    return img
+
+
+
 def add_to_csv(file_path, boxes, output_file):
     """Add the boxes to the CSV file with the corresponding file name."""
     file_name = file_path.split("/")[-1]
@@ -90,17 +103,26 @@ def add_to_csv(file_path, boxes, output_file):
 
 
 
-def label_directory(source_directory, target_directory):
+def label_directory(source_directory, target_directory, starting_file=None, maxNumBoxes=0):
     """Label all images in the source directory and save the labeled images and labels in the target directory.
     - source_directory: The directory containing the images to label.
     The saved images are resized to height 800, and renamed to image_0.png, image_1.png, etc."""
-    imageCount = 0
-
-    maxNumBoxes = 0
+    # Preparation
+    if os.path.exists(os.path.join(target_directory, "labels.csv")):
+        with open(os.path.join(target_directory, "labels.csv"), "r") as f:
+            imageCount = len(f.readlines()) - 1
+    else:
+        imageCount = 0
     if not os.path.exists(target_directory):
         os.makedirs(target_directory)
+    skip = True if starting_file is not None else False
+    # Main loop
     for file in os.listdir(source_directory):
-        if any(file.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
+        if skip:
+            if file == starting_file:
+                skip = False
+        else:
+            any(file.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp")):
             img = cv2.imread(os.path.join(source_directory, file))
             if img is None:
                 print(f"Error: Unable to load image {file}.")
@@ -110,6 +132,9 @@ def label_directory(source_directory, target_directory):
             add_to_csv("image_" + str(imageCount), boxes, os.path.join(target_directory, "labels.csv"))
             cv2.imwrite(os.path.join(target_directory, "image_" + str(imageCount) + ".png"), mod_img)
             imageCount += 1
+            print(f"{file} labeled successfully.")
+    
+    return maxNumBoxes, imageCount
 
 
 

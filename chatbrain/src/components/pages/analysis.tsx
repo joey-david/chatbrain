@@ -5,7 +5,7 @@ import { LLMAnalysis } from "@/components/LLMAnalysis"
 import { MetadataResults } from "@/components/metadataResults"
 import { LLMResults } from "@/components/LLMResults"
 import { EmptyState } from "@/components/empty-state"
-import { TextIcon, Image, Mic, ArrowUpFromLine, Undo2, Undo } from "lucide-react"
+import { TextIcon, Image, Mic, ArrowUpFromLine, Undo2 } from "lucide-react"
 import { LoadingBar } from "@/components/ui/loadingBar"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,10 +31,13 @@ function Analysis() {
     const blob = new Blob([typedText], { type: "text/plain" })
     const file = new File([blob], "input.txt", { type: "text/plain" })
     try {
+      setProgress(0) // Initialize progress on file selection
+      setIsLoading(true)
+      setLlmResults(null)
+      setMetadataResults(null)
       validateFiles([file])
       setSelectedFiles([file])
       setFileType("txt")
-      setIsLoading(true)
       setShowTextInput(false)
     } catch (error) {
       console.error("Validation error:", error)

@@ -99,8 +99,10 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
 
     # Regex to detect header lines. Make sure to exclude 'pinned' messages.
     header_pattern = re.compile(
-        r'^(?!.*\b(pin|image|icon)\b)([^—]+)\s+—\s+(Today|Yesterday)\s+at\s+([0-9]{1,2}:[0-9]{2})\s+(AM|PM)'
-        r'|^(?!.*\b(pin|image|icon)\b)([^—]+)\s+—\s+([0-9]{1,2}/[0-9]{1,2}/[0-9]{2}),\s+([0-9]{1,2}:[0-9]{2})\s+(AM|PM)'
+        r'^(?!.*\b(?:chang|pin|icon)\b)([^—]+)\s+—\s+'
+        r'((?:Today|Aujourd\'hui|Heute|Hoy|Oggi|昨日|Yesterday|Hier|Gestern|Ayer|Ieri|昨日))\s+(?:at|à)\s+([0-9]{1,2}:[0-9]{2})(?:\s+(AM|PM))?\s*$'
+        r'|^(?!.*\b(?:chang|pin|icon)\b)([^—]+)\s+—\s+'
+        r'([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4})(?:,\s*)?(?:\s*(?:at|à)\s*)?([0-9]{1,2}:[0-9]{2})(?:\s*(AM|PM))?\s*$'
     )
 
     lastIsNickname = False
@@ -116,17 +118,22 @@ def shrink_discord_chat(file, start_date=None, end_date=None, start_time=None, e
             if match.group(1):  # "Today"/"Yesterday" branch
                 user_raw = match.group(1).strip()
                 date_str = match.group(2).strip()
-                hour_str = match.group(3).strip() + " " +match.group(4).strip()
+                hour_str = match.group(3).strip()
+                ampm = match.group(4).strip() if match.group(4) else ""
                 if date_str in ["Today", "Aujourd'hui", "Heute", "Hoy", "Oggi", "今日"]:
                     date_str = datetime.now().strftime("%m/%d/%Y")
                 elif date_str in ["Yesterday", "Hier", "Gestern", "Ayer", "Ieri", "昨日"]:
                     date_str = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
                 else:
-                    raise ValueError("Date was given as a single word, but isn't 'Today' or 'Yesterday'")
-            else :  # date branch
+                    raise ValueError("Date was given as a single word, but isn't recognized.")
+                hour_str = hour_str + (" " + ampm if ampm else "")
+            elif match.group(5):  # date branch
+                print(line)
                 user_raw = match.group(5).strip()
                 date_str = match.group(6).strip()
-                hour_str = match.group(7).strip() + " " + match.group(8).strip()
+                hour_str = match.group(7).strip()
+                ampm = match.group(8).strip() if match.group(8) else ""
+                hour_str = hour_str + (" " + ampm if ampm else "")
             if user_raw not in name_to_nickname:
                 nickname = create_nickname(user_raw, used_nicknames)
                 name_to_nickname[user_raw] = nickname
