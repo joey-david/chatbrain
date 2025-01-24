@@ -21,6 +21,7 @@ def drag_annotate(img):
     start_pt = (0, 0)
     last_x, last_y = 0, 0
     index = 1
+    quit = False
     
     # Normalize image to height 800
     img = cv2.resize(img, (int(800 * img.shape[1] / img.shape[0]), 800))
@@ -69,9 +70,12 @@ def drag_annotate(img):
                 removed_box = boxes.pop()
                 if removed_box[4] != 2:
                     index -= 1
+        elif key == 27:  # Escape
+            quit = True
+            break
 
     cv2.destroyAllWindows()
-    return boxes, img
+    return boxes, img, quit
 
 
 
@@ -103,40 +107,39 @@ def add_to_csv(file_path, boxes, output_file):
 
 
 
-def label_directory(source_directory, target_directory, starting_file=None, maxNumBoxes=0):
+def label_directory(source_directory, target_csv, maxNumBoxes=0):
     """Label all images in the source directory and save the labeled images and labels in the target directory.
     - source_directory: The directory containing the images to label.
     The saved images are resized to height 800, and renamed to image_0.png, image_1.png, etc."""
     # Preparation
-    if os.path.exists(os.path.join(target_directory, "labels.csv")):
-        with open(os.path.join(target_directory, "labels.csv"), "r") as f:
+    if os.path.exists(target_csv):
+        with open(target_csv, "r") as f:
             imageCount = len(f.readlines()) - 1
     else:
+        with open(target_csv, "w") as f:
+            f.write("filename;boxes\n")
         imageCount = 0
-    if not os.path.exists(target_directory):
-        os.makedirs(target_directory)
-    skip = True if starting_file is not None else False
     # Main loop
     for file in os.listdir(source_directory):
-        if skip:
-            if file == starting_file:
-                skip = False
-        else:
-            any(file.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp")):
-            img = cv2.imread(os.path.join(source_directory, file))
+        filepath = os.path.join(source_directory, file)
+        filename = filepath.split("/")[-1]
+        if (any(file.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp")) 
+                and not any(filename in line for line in open(target_csv))):
+            img = cv2.imread(filepath)
             if img is None:
                 print(f"Error: Unable to load image {file}.")
                 continue
-            boxes, mod_img = drag_annotate(img)
+            boxes, mod_img, quit = drag_annotate(img)
+            if quit:
+                break
             maxNumBoxes = max(maxNumBoxes, len(boxes))
-            add_to_csv("image_" + str(imageCount), boxes, os.path.join(target_directory, "labels.csv"))
-            cv2.imwrite(os.path.join(target_directory, "image_" + str(imageCount) + ".png"), mod_img)
+            add_to_csv(filename, boxes, target_csv)
             imageCount += 1
-            print(f"{file} labeled successfully.")
+            print(f"You've labeled {round(imageCount / len(os.listdir(source_directory))*100, 2)}% of the images.")
     
     return maxNumBoxes, imageCount
 
 
 
 if __name__ == "__main__":
-    label_directory("./Screenshots", "labeled_images")
+    label_directory(os.path.expanduser("~/Pictures/Screenshots"), "./data/labels.csv")
