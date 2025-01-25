@@ -9,3 +9,5 @@ backend/vision_model/dataset/*
 notes.md
 **/*.pkl
 data/*.txt
+**/*.pt
+runs/**

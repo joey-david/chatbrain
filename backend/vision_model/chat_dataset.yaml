@@ -1,0 +1,11 @@
+path: /home/joey/Projects/chatbrain/backend/vision_model/dataset/
+train: train/images
+val: val/images
+names:
+  0: contact_name
+  1: own_msg
+  2: others_msg
+nc: 3
+degrees: 0.0    # Disable rotation (text is rarely rotated)
+shear: 0.0      # Disable shear (preserve box shapes)
+perspective: 0.0 # Disable perspective (text boxes are flat)

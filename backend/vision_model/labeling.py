@@ -1,81 +1,123 @@
-import tkinter as tk
-from tkinter import filedialog
+import cv2
+import os
+import csv
+import shutil
+from PIL import Image
+import random
+
+
+
 import cv2
 import numpy as np
-import os
-
-
 
 def drag_annotate(img):
     """
     Returns a list of boxes in the format [x1, y1, x2, y2, box_type, index] and the scaled image.
-    - Box type is 0 for left click, 1 for right click, 2 for middle click.
-    - x1, y1 is the top left corner of the box and x2, y2 is the bottom right corner.
-    - img: The image to annotate.
-    - index: The index of the rectangle (1-based for red and green, always 0 for yellow).
+    - img: The image to annotate (OpenCV BGR format)
+    - x1, y1: Top-left corner (always ≤ x2,y2)
+    - x2, y2: Bottom-right corner (always ≥ x1,y1)
+    - Box type: 0 (left/other), 1 (right/user), 2 (middle/contact)
+    - index: 1-based for types 0/1, always 0 for type 2
     """
-    colors = {0: (0, 0, 255), 1: (0, 255, 0), 2: (0, 255, 255)}
+    colors = {0: (0, 0, 255), 1: (0, 255, 0), 2: (0, 255, 255)}  # BGR colors
     boxes = []
     drawing = False
     box_type = None
     start_pt = (0, 0)
-    last_x, last_y = 0, 0
+    last_pt = (0, 0)
     index = 1
-    quit = False
+    quit_flag = False
     
-    # Normalize image to height 800
-    img = cv2.resize(img, (int(800 * img.shape[1] / img.shape[0]), 800))
+    # Normalize image height to 800 while maintaining aspect ratio
+    h, w = img.shape[:2]
+    new_w = int(800 * w / h)
+    img = cv2.resize(img, (new_w, 800))
+    display_img = img.copy()
 
-    def mouse_handler(event, x, y, _flags, _param):
-        nonlocal drawing, box_type, start_pt, last_x, last_y, index
+    def mouse_handler(event, x, y, flags, param):
+        nonlocal drawing, box_type, start_pt, last_pt, index
+        
+        x = max(0, min(x, img.shape[1]-1))  # Keep within image bounds
+        y = max(0, min(y, img.shape[0]-1))
+        
         if event in (cv2.EVENT_LBUTTONDOWN, cv2.EVENT_RBUTTONDOWN, cv2.EVENT_MBUTTONDOWN):
             drawing = True
             start_pt = (x, y)
-            last_x, last_y = x, y
-            box_type = 0 if event == cv2.EVENT_LBUTTONDOWN else (1 if event == cv2.EVENT_RBUTTONDOWN else 2)
+            last_pt = (x, y)
+            box_type = {cv2.EVENT_LBUTTONDOWN: 0,
+                        cv2.EVENT_RBUTTONDOWN: 1,
+                        cv2.EVENT_MBUTTONDOWN: 2}[event]
+                        
         elif event == cv2.EVENT_MOUSEMOVE:
             if drawing:
-                last_x, last_y = x, y
+                last_pt = (x, y)
+                
         elif event in (cv2.EVENT_LBUTTONUP, cv2.EVENT_RBUTTONUP, cv2.EVENT_MBUTTONUP):
             if drawing:
-                if box_type == 2:
-                    boxes.append([start_pt[0], start_pt[1], x, y, box_type, 0])
+                # Calculate normalized coordinates regardless of drag direction
+                x1 = min(start_pt[0], last_pt[0])
+                y1 = min(start_pt[1], last_pt[1])
+                x2 = max(start_pt[0], last_pt[0])
+                y2 = max(start_pt[1], last_pt[1])
+                
+                # Validate box size
+                if (x2 - x1) > 5 and (y2 - y1) > 5:  # Minimum 5x5px
+                    if box_type == 2:
+                        boxes.append([x1, y1, x2, y2, box_type, 0])
+                    else:
+                        boxes.append([x1, y1, x2, y2, box_type, index])
+                        index += 1
                 else:
-                    boxes.append([start_pt[0], start_pt[1], x, y, box_type, index])
-                    index += 1
-            drawing = False
+                    print("Box too small, ignoring...")
+                    
+                drawing = False
 
-    cv2.namedWindow("Image", cv2.WINDOW_GUI_NORMAL)
-    cv2.setMouseCallback("Image", mouse_handler)
-    cv2.resizeWindow("Image", img.shape[1], img.shape[0])
+    cv2.namedWindow("Image Annotation", cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE)
+    cv2.setMouseCallback("Image Annotation", mouse_handler)
 
     while True:
-        temp = img.copy()
-        overlay = temp.copy()
-        for x1, y1, x2, y2, t, idx in boxes:
+        display_img = img.copy()
+        overlay = img.copy()
+        
+        # Draw finalized boxes
+        for box in boxes:
+            x1, y1, x2, y2, t, idx = box
             cv2.rectangle(overlay, (x1, y1), (x2, y2), colors[t], -1)
             if t != 2:
-                cv2.putText(overlay, str(idx), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[t], 2)
+                cv2.putText(overlay, str(idx), (x1+2, y1+15), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+        
+        # Draw current preview box
         if drawing:
-            cv2.rectangle(overlay, start_pt, (last_x, last_y), colors[box_type], -1)
+            preview_x1 = min(start_pt[0], last_pt[0])
+            preview_y1 = min(start_pt[1], last_pt[1])
+            preview_x2 = max(start_pt[0], last_pt[0])
+            preview_y2 = max(start_pt[1], last_pt[1])
+            
+            cv2.rectangle(overlay, (preview_x1, preview_y1),
+                         (preview_x2, preview_y2), colors[box_type], -1)
             if box_type != 2:
-                cv2.putText(overlay, str(index), (start_pt[0], start_pt[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[box_type], 2)
-        cv2.addWeighted(overlay, 0.4, temp, 0.6, 0, temp)
-        key = cv2.waitKey(1) & 0xFF
-        cv2.imshow("Image", temp)
-        if key == 13:  # Enter
+                cv2.putText(overlay, str(index), (preview_x1+2, preview_y1+15),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+        
+        # Blend overlay
+        cv2.addWeighted(overlay, 0.3, display_img, 0.7, 0, display_img)
+        cv2.imshow("Image Annotation", display_img)
+        
+        key = cv2.waitKey(1)
+        if key == 13:  # Enter - finish
             break
-        elif key == 8:  # Backspace
+        elif key == 8:  # Backspace - undo last
             if boxes:
-                removed_box = boxes.pop()
-                if removed_box[4] != 2:
+                removed = boxes.pop()
+                if removed[4] != 2:
                     index -= 1
-        elif key == 27:  # Escape
-            quit = True
+        elif key == 27:  # Escape - quit
+            quit_flag = True
             break
 
     cv2.destroyAllWindows()
-    return boxes, img, quit
+    return boxes, img, quit_flag
 
 
 
@@ -89,6 +131,25 @@ def visualize_boxes(img, boxes):
         if t != 2:
             cv2.putText(img, str(idx), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[t], 2)
     return img
+
+def visualize_from_csv(file_path, csv_file):
+    """Visualize the boxes from the CSV file on the image with the corresponding file name."""
+    img = cv2.imread(file_path)
+    file_name = file_path.split("/")[-1]
+    if img is None:
+        print(f"Error: Unable to load image {file_name}.")
+        return
+    boxes = []
+    with open(csv_file, "r") as f:
+        for line in f:
+            if file_name in line:
+                boxes = line.split(";")[1:-1]
+                break
+    boxes = [list(map(int, box.split(","))) for box in boxes]
+    img = visualize_boxes(img, boxes)
+    cv2.imshow("Image", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 
@@ -140,6 +201,109 @@ def label_directory(source_directory, target_csv, maxNumBoxes=0):
     return maxNumBoxes, imageCount
 
 
+def organize_dataset(csv_path, src_img_dir, output_dir, train_ratio=0.8, seed=42):
+    """
+    Organize images and labels into YOLO format directory structure
+    
+    Args:
+        csv_path (str): Path to CSV annotations file
+        src_img_dir (str): Directory containing source images
+        output_dir (str): Root directory for output dataset
+        train_ratio (float): Ratio of data to use for training (0-1)
+        seed (int): Random seed for reproducibility
+    """
+    # Create directories
+    train_img_dir = os.path.join(output_dir, 'train', 'images')
+    train_label_dir = os.path.join(output_dir, 'train', 'labels')
+    val_img_dir = os.path.join(output_dir, 'val', 'images')
+    val_label_dir = os.path.join(output_dir, 'val', 'labels')
+    
+    for d in [train_img_dir, train_label_dir, val_img_dir, val_label_dir]:
+        os.makedirs(d, exist_ok=True)
+
+    # Read and process CSV
+    with open(csv_path, 'r') as f:
+        reader = csv.reader(f, delimiter=';')
+        next(reader)  # Skip header
+        
+        valid_entries = []
+        for row in reader:
+            if not row:
+                continue
+                
+            filename = row[0].strip()
+            if not filename:
+                continue
+                
+            img_path = os.path.join(src_img_dir, filename)
+            if not os.path.exists(img_path):
+                print(f"Warning: Missing image {filename} - skipping")
+                continue
+                
+            valid_entries.append((filename, row[1:]))
+
+    # Split train/val
+    random.seed(seed)
+    random.shuffle(valid_entries)
+    split_idx = int(len(valid_entries) * train_ratio)
+    train_entries = valid_entries[:split_idx]
+    val_entries = valid_entries[split_idx:]
+
+    # Process entries
+    for entries, img_dir, label_dir in [
+        (train_entries, train_img_dir, train_label_dir),
+        (val_entries, val_img_dir, val_label_dir)
+    ]:
+        for filename, boxes in entries:
+            src_path = os.path.join(src_img_dir, filename)
+            dst_img_path = os.path.join(img_dir, filename)
+            
+            # Move image
+            shutil.copy(src_path, dst_img_path)
+            
+            # Get image dimensions
+            with Image.open(src_path) as img:
+                width, height = img.size
+            
+            # Create label file
+            label_path = os.path.join(label_dir, os.path.splitext(filename)[0] + '.txt')
+            with open(label_path, 'w') as f:
+                for box in boxes:
+                    if not box:
+                        continue
+                        
+                    parts = box.strip().split(',')
+                    if len(parts) != 6:
+                        print(f"Invalid box format in {filename}: {box}")
+                        continue
+                        
+                    try:
+                        x1 = int(parts[0])
+                        y1 = int(parts[1])
+                        x2 = int(parts[2])
+                        y2 = int(parts[3])
+                        cls_id = int(parts[4])
+                    except ValueError:
+                        print(f"Invalid box values in {filename}: {box}")
+                        continue
+                    
+                    # Convert to YOLO format
+                    x_center = (x1 + x2) / 2 / width
+                    y_center = (y1 + y2) / 2 / height
+                    box_width = (x2 - x1) / width
+                    box_height = (y2 - y1) / height
+                    
+                    # Write to label file
+                    f.write(f"{cls_id} {x_center:.6f} {y_center:.6f} {box_width:.6f} {box_height:.6f}\n")
+
+    print(f"Dataset organized successfully!")
+    print(f"Train samples: {len(train_entries)}")
+    print(f"Validation samples: {len(val_entries)}")
+    
+
+
 
 if __name__ == "__main__":
-    label_directory(os.path.expanduser("~/Pictures/Screenshots"), "./data/labels.csv")
+    # label_directory("./dataset/raw", "./dataset/labels.csv")
+    # visualize_from_csv("dataset/literally-just-23-of-the-most-ridiculous-text-messages-ever-sent-1-796160357.jpg", "dataset/labels.csv")
+    organize_dataset("dataset/labels.csv", "dataset/raw", "dataset", train_ratio=0.8, seed=42)
