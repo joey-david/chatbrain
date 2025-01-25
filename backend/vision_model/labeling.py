@@ -278,6 +278,7 @@ def organize_dataset(csv_path, src_img_dir, output_dir, train_ratio=0.8, seed=42
                         continue
                         
                     try:
+                        # Get coordinates from resized annotation image
                         x1 = int(parts[0])
                         y1 = int(parts[1])
                         x2 = int(parts[2])
@@ -287,11 +288,26 @@ def organize_dataset(csv_path, src_img_dir, output_dir, train_ratio=0.8, seed=42
                         print(f"Invalid box values in {filename}: {box}")
                         continue
                     
-                    # Convert to YOLO format
-                    x_center = (x1 + x2) / 2 / width
-                    y_center = (y1 + y2) / 2 / height
-                    box_width = (x2 - x1) / width
-                    box_height = (y2 - y1) / height
+                    # Convert to original image coordinates
+                    resized_width = int(800 * width / height)  # Same as annotation resize
+                    resized_height = 800
+                    
+                    x1_orig = x1 * (width / resized_width)
+                    x2_orig = x2 * (width / resized_width)
+                    y1_orig = y1 * (height / resized_height)
+                    y2_orig = y2 * (height / resized_height)
+                    
+                    # Calculate YOLO format with original dimensions
+                    x_center = (x1_orig + x2_orig) / 2 / width
+                    y_center = (y1_orig + y2_orig) / 2 / height
+                    box_width = (x2_orig - x1_orig) / width
+                    box_height = (y2_orig - y1_orig) / height
+                    
+                    # Clamp values to valid range
+                    x_center = max(0.0, min(1.0, x_center))
+                    y_center = max(0.0, min(1.0, y_center))
+                    box_width = max(0.0, min(1.0, box_width))
+                    box_height = max(0.0, min(1.0, box_height))
                     
                     # Write to label file
                     f.write(f"{cls_id} {x_center:.6f} {y_center:.6f} {box_width:.6f} {box_height:.6f}\n")
@@ -305,5 +321,6 @@ def organize_dataset(csv_path, src_img_dir, output_dir, train_ratio=0.8, seed=42
 
 if __name__ == "__main__":
     # label_directory("./dataset/raw", "./dataset/labels.csv")
-    # visualize_from_csv("dataset/literally-just-23-of-the-most-ridiculous-text-messages-ever-sent-1-796160357.jpg", "dataset/labels.csv")
+    # print the working directory
+    # visualize_from_csv("dataset/raw/1000012011.jpeg", "dataset/labels.csv")
     organize_dataset("dataset/labels.csv", "dataset/raw", "dataset", train_ratio=0.8, seed=42)
