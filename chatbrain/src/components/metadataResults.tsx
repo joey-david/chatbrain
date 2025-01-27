@@ -17,14 +17,14 @@ interface MetadataAnalysisResults {
 export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
   if (data.total_characters === 0) {
     return (
-      <div className="inline-flex flex-col justify-center items-center border border-white mx-auto px-4 mt-10">
+      <div className="inline-flex flex-col justify-center items-center mx-auto px-4 mt-10">
         <p className="text-center text-md mt-3">
-          Since there is was no conventional formatting to your input, its metadata could not be parsed.
+          No valid formatting detected, unable to parse metadata.
         </p>
-        <p className="text-center text-md">
-          To get a comprehensive analysis, please use the following format at the start of each line :
+        <p className="text-center mt-1 text-md">
+          Please use the following format for each message:
         </p>
-        <p className="text-center text-md mt-5 mb-1">
+        <p className="text-center text-md mt-5 mb-1 border-2 border-gray-500 p-2">
           <code className="">John — 01/02/25, 12:34 AM: *message from the user*</code>
         </p>
       </div>
@@ -53,37 +53,41 @@ export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
     })
   
     // Simple color palette for each user
-    const colorPalette = ["rgb(51, 35, 124) ", "rgb(46, 140, 183)", "rgb(126, 89, 120) ", "rgb(95, 139, 126)", "rgb(90, 44, 44)"]
+    const colorPalette = ["rgb(194, 188, 255)", "rgb(107, 203, 255)", "rgb(150, 187, 139)", "rgb(95, 139, 126)", "rgb(90, 44, 44)"]
   
     return (
-      <div className="w-full justify-center space-y-8 mt-6 bg-card/0 transition duration-300 ease-in-out">
-        {/* Global stats */}
-        <div className="flex justify-center w-full">
-          <div className="flex flex-col items-center justify-center px-12 py-4 border rounded-lg bg-card/40 max-w-xl">
-          <h2 className="text-xl font-bold mb-4 text-black">Global Metrics</h2>
-          <div className="mb-2 text-black">Total Messages: {data.total_messages}</div>
-          <div className="mb-2 text-black">Total Characters: {data.total_characters}</div>
+      <div>
+        <hr className="border-t-2 border-gray-500 mt-10" />
+        <div className="w-full justify-center space-y-8 mt-6 bg-card/0 transition duration-300 ease-in-out">
+          <h1 className="text-white text-3xl mt-8">Metadata Analysis</h1>
+          {/* Global stats */}
+          <div className="flex justify-center w-full mt-5">
+            <div className="flex flex-col items-center justify-center px-12 py-4 rounded-lg bg-black/25 max-w-xl">
+              <h2 className="text-xl font-bold mb-4">Global Metrics</h2>
+              <div className="mb-2">Total Messages: <code className="font-semibold">{data.total_messages}</code></div>
+              <div className="">Total Characters: <code className="font-semibold">{data.total_characters}</code></div>
+            </div>
           </div>
-        </div>
-        <div className="flex justify-center w-full">
-          <div className="w-[52rem] h-96 bg-card/40 rounded-lg border-2 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} width={1152}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {userKeys.map((user, index) => (
-              <Bar
-              key={user}
-              dataKey={user}
-              fill={colorPalette[index % colorPalette.length]}
-              name={user}
-              />
-              ))}
-            </BarChart>
-            </ResponsiveContainer>
+          <div className="flex justify-center w-full">
+            <div className="w-[52rem] h-96 rounded-lg p-4">
+              <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} width={1152}>
+                <CartesianGrid strokeDasharray="3 3" stroke="white" />
+                <XAxis dataKey="category" stroke="white" />
+                <YAxis stroke="white" />
+                <Tooltip />
+                <Legend />
+                {userKeys.map((user, index) => (
+                <Bar
+                key={user}
+                dataKey={user}
+                fill={colorPalette[index % colorPalette.length]}
+                name={user}
+                />
+                ))}
+              </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>

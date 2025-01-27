@@ -29,7 +29,7 @@ export function EmptyState({
   return (
     <div className={cn(
       "bg-muted/0 text-center",
-      "border-2 border-dashed border-gray-500 rounded-xl p-14 w-49",
+      "border-2 border-dashed border-gray-500 rounded-xl p-14 w-[600px]",
       "group transition duration-300 ease-in-out hover:duration-200",
       className
     )}>

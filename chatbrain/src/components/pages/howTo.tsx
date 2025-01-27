@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, Mic, MessageSquare } from 'lucide-react';
+import { TextSelect, LucideFileStack, AudioLines } from 'lucide-react';
 import TabsContainer from '@/components/ui/tabsContainers';
 
 interface Step {
@@ -55,7 +55,7 @@ const TextMode = () => (
   <InputModeCard
     title="Text Input"
     description="Send text messages to ChatBrain for instant responses and engaging conversations."
-    icon={MessageSquare}
+    icon={TextSelect}
     steps={[
       {
         title: "Type Your Message",
@@ -80,7 +80,7 @@ const ImageMode = () => (
   <InputModeCard
     title="Image Input"
     description="Share images with ChatBrain for analysis, recognition, and detailed discussions about visual content."
-    icon={Upload}
+    icon={LucideFileStack}
     steps={[
       {
         title: "Select Image",
@@ -105,7 +105,7 @@ const AudioMode = () => (
   <InputModeCard
     title="Audio Input"
     description="Use voice commands and audio messages for a hands-free chat experience."
-    icon={Mic}
+    icon={AudioLines}
     steps={[
       {
         title: "Enable Microphone",
@@ -128,9 +128,9 @@ const AudioMode = () => (
 
 const HowTo = () => {
   const tabs = [
-    { title: "Text", component: <TextMode /> },
-    { title: "Image", component: <ImageMode /> },
-    { title: "Audio", component: <AudioMode /> }
+    { title: <><TextSelect className="inline-block w-4 h-4 mr-2" />Free text</>, component: <TextMode /> },
+    { title: <><LucideFileStack className="inline-block w-4 h-4 mr-2" />Logs/Screenshots</>, component: <ImageMode /> },
+    { title: <><AudioLines className="inline-block w-4 h-4 mr-2" />Audio recordings</>, component: <AudioMode /> }
   ];
 
   return <TabsContainer tabs={tabs}/>;

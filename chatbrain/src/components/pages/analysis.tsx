@@ -5,7 +5,7 @@ import { LLMAnalysis } from "@/components/LLMAnalysis"
 import { MetadataResults } from "@/components/metadataResults"
 import { LLMResults } from "@/components/LLMResults"
 import { EmptyState } from "@/components/empty-state"
-import { TextIcon, Image, Mic, ArrowUpFromLine, Undo2 } from "lucide-react"
+import { TextSelect, LucideFileStack, AudioLines, ArrowUpFromLine, Undo2 } from "lucide-react"
 import { LoadingBar } from "@/components/ui/loadingBar"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -76,22 +76,22 @@ const TextInputSection = ({
   return (
     <div className={cn(
       "bg-muted/0 text-center",
-      "border-2 border-dashed rounded-xl p-2 w-[550px]",
+      "border-2 border-dashed border-gray-500 rounded-xl p-2 w-[600px]",
       "group transition duration-300 ease-in-out hover:duration-200"
     )}>
       <textarea
-        className="bg-muted/0 border-none p-2 w-full rounded text-black resize-none placeholder-gray-500 focus:outline-none"
+        className="bg-muted/0 border-none p-2 w-full rounded text-gray-100 resize-none placeholder-gray-400 focus:outline-none"
         rows={10}
         placeholder="Type or paste your text here..."
         value={typedText}
         onChange={(e) => setTypedText(e.target.value)}
       />
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center gap-2 mb-3">
         <Button onClick={onCancel} className="gap-1 text-black" variant="outline">
           <Undo2 className="w-4 gap-2"/> Cancel
         </Button>
         <Button onClick={handleSubmit} className="gap-1">
-          <ArrowUpFromLine className="w-4 gap-2"/> Send
+          <ArrowUpFromLine className="w-4 gap-2"/> Submit
         </Button>
       </div>
     </div>
@@ -193,7 +193,7 @@ function Analysis() {
           description={selectedFiles.length 
             ? `${selectedFiles.length} file(s) selected - ${fileType?.toUpperCase() || 'Unknown'} type`
             : "Please upload a chat log, screenshots, or an audio recording."}
-          icons={[Image, TextIcon, Mic]}
+          icons={[TextSelect, LucideFileStack, AudioLines]}
           action={{
             label: selectedFiles.length ? "Change files" : "Upload file(s)",
             onClick: () => fileInputRef.current?.click()
@@ -204,11 +204,10 @@ function Analysis() {
           }}
         />
       )}
-
       {metadataResults && <MetadataResults data={metadataResults} />}
       {isLoading && <LoadingBar progress={progress} status={status} />}
       {!isLoading && llmResults && (
-        <div className="max-w-5xl mt-6 w-full">
+        <div className="max-w-7xl mt-6 w-full">
           <LLMResults data={llmResults} />
         </div>
       )}

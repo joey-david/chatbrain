@@ -66,7 +66,7 @@ const GradientScoreBar = ({ value }: { value: number }) => {
 
 const ScoreRow = ({ label, value }: { label: string; value: number }) => (
   <div className="flex items-center gap-4 mb-3">
-    <span className="w-32 text-sm text-muted-foreground">{label}</span>
+    <span className="w-32 text-sm text-gray-400">{label}</span>
     <div className="flex-1">
       <GradientScoreBar value={value} />
     </div>
@@ -75,7 +75,7 @@ const ScoreRow = ({ label, value }: { label: string; value: number }) => (
 );
 
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-card text-card-foreground rounded-2xl shadow-sm ${className || ""}`}>
+  <div className={`bg-card text-gray-200 rounded-2xl shadow-sm ${className || ""}`}>
     {children}
   </div>
 );
@@ -84,25 +84,28 @@ export function LLMResults({ data }: { data: ResultsData }) {
   const { conversation_metrics, users, insights } = data;
 
   return (
-    <Card className="w-full max-w-5xl mx-auto space-y-8  mt-6 bg-card/0 transition duration-300 ease-in-out">
+    
+    <div className="w-full max-w-7xl mx-auto space-y-8 mt-6 transition duration-300 ease-in-out">
       {/* Conversation Metrics */}
+      <hr className="border-t-2 border-gray-500 mt-10" />
+      <h1 className="text-white text-3xl mt-8">Large Language Model Feedback</h1>
       <div className="flex justify-center w-full">
-        <Card className="bg-card/40 border-2 w-full max-w-xl">
+        <Card className="bg-black/35 w-full max-w-xl">
           <div className="p-6">
-        <h2 className="text-xl font-bold mb-6">Conversation Metrics</h2>
-        <ScoreRow label="Stability" value={conversation_metrics.stability_score_out_of_100} />
-        <ScoreRow label="Healthiness" value={conversation_metrics.health_score_out_of_100} />
-        <ScoreRow label="Intensity" value={conversation_metrics.intensity_score_out_of_100} />
+            <h2 className="text-xl mb-6">Conversation Metrics</h2>
+            <ScoreRow label="Stability" value={conversation_metrics.stability_score_out_of_100} />
+            <ScoreRow label="Healthiness" value={conversation_metrics.health_score_out_of_100} />
+            <ScoreRow label="Intensity" value={conversation_metrics.intensity_score_out_of_100} />
           </div>
         </Card>
       </div>
 
       {/* User Metrics */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(Object.keys(users).length, 3)} gap-6 bg-muted/0 border-border text-center`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(Object.keys(users).length, 3)} gap-6 bg-black/35 border-border text-center`}>
       {Object.entries(users).map(([username, metrics]) => (
-        <Card key={username} className="bg-card/40 border-2">
+        <Card key={username} className="bg-black/0">
         <div className="p-6">
-          <h3 className="text-lg font-bold mb-6">{username}</h3>
+          <h3 className="text-lg mb-6">{username}</h3>
           <div className="space-y-4">
           <ScoreRow label="Assertiveness" value={metrics.assertiveness} />
           <ScoreRow label="Positiveness" value={metrics.positiveness} />
@@ -120,9 +123,9 @@ export function LLMResults({ data }: { data: ResultsData }) {
       {/* Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
       {insights.slice(0, 2).map((insight, idx) => (
-        <Card key={idx} className="bg-card/40 border-2">
-        <div className="p-6 rounded-lg text-secondary-foreground text-justify">
-          <h3 className="text-lg font-bold mb-4 text-center">Insight {idx + 1}</h3>
+        <Card key={idx} className="bg-black/35">
+        <div className="p-6 rounded-lg text-justify">
+          <h3 className="text-lg font-medium mb-4 text-center">Insight {idx + 1}</h3>
           {insight}
         </div>
         </Card>
@@ -130,15 +133,15 @@ export function LLMResults({ data }: { data: ResultsData }) {
       </div>
       {insights.length > 2 && (
       <div className="grid grid-cols-1 gap-6 mt-6">
-        <Card className="bg-card/40 border-2">
-        <div className="p-6 rounded-lg text-secondary-foreground text-justify">
-          <h3 className="text-lg font-bold mb-4 text-center">Insight 3</h3>
+        <Card className="bg-black/35">
+        <div className="p-6 rounded-lg text-justify">
+          <h3 className="text-lg font-medium mb-4 text-center">Insight 3</h3>
           {insights[2]}
         </div>
         </Card>
       </div>
       )}
-    </Card>
+    </div>
   );
 }
 
