@@ -184,19 +184,21 @@ def label_directory(source_directory, target_csv, maxNumBoxes=0):
     for file in os.listdir(source_directory):
         filepath = os.path.join(source_directory, file)
         filename = filepath.split("/")[-1]
-        if (any(file.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp")) 
-                and not any(filename in line for line in open(target_csv))):
-            img = cv2.imread(filepath)
-            if img is None:
-                print(f"Error: Unable to load image {file}.")
-                continue
-            boxes, mod_img, quit = drag_annotate(img)
-            if quit:
-                break
-            maxNumBoxes = max(maxNumBoxes, len(boxes))
-            add_to_csv(filename, boxes, target_csv)
-            imageCount += 1
-            print(f"You've labeled {round(imageCount / len(os.listdir(source_directory))*100, 2)}% of the images.")
+        if any(file.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp")):
+            if not any(filename in line for line in open(target_csv)):                    
+                img = cv2.imread(filepath)
+                if img is None:
+                    print(f"Error: Unable to load image {file}.")
+                    continue
+                boxes, mod_img, quit = drag_annotate(img)
+                if quit:
+                    break
+                maxNumBoxes = max(maxNumBoxes, len(boxes))
+                add_to_csv(filename, boxes, target_csv)
+                imageCount += 1
+                print(f"You've labeled {round(imageCount / len(os.listdir(source_directory))*100, 2)}% of the images.")
+        else :
+            print(f"Skipping {file}...")
     
     return maxNumBoxes, imageCount
 
@@ -320,7 +322,6 @@ def organize_dataset(csv_path, src_img_dir, output_dir, train_ratio=0.8, seed=42
 
 
 if __name__ == "__main__":
-    # label_directory("./dataset/raw", "./dataset/labels.csv")
-    # print the working directory
+    label_directory("./dataset/raw", "./dataset/labels.csv")
     # visualize_from_csv("dataset/raw/1000012011.jpeg", "dataset/labels.csv")
-    organize_dataset("dataset/labels.csv", "dataset/raw", "dataset", train_ratio=0.8, seed=42)
+    # organize_dataset("dataset/labels.csv", "dataset/raw", "dataset", train_ratio=0.8, seed=42)
