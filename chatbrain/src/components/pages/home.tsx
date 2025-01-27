@@ -59,7 +59,7 @@ function Home() {
       </p>
       </div>
       <div className="flex gap-3">
-      <a href="/analysis" className="inline-block">
+      <a href="/use" className="inline-block">
         <Button size="lg" className="gap-3 w-full text-base"  variant="secondary">
         <Brain className="h-6 w-6" /> Start analyzing
         </Button>

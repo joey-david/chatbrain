@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Home } from './components/pages/home'
 import { Header } from './components/header'
 import { Footer } from './components/footer'
-import { Analysis } from './components/pages/analysis'
+import { Use } from './components/pages/use'
 import './App.css'
 
 const GradientBackground = () => {
@@ -44,7 +44,7 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/analysis" element={<Analysis />} />
+            <Route path="/use" element={<Use />} />
           </Routes>
         </main>
         <Footer />
