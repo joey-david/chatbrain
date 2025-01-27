@@ -9,7 +9,7 @@ export function Header() {
 
   return (
     <header className="flex items-center justify-between px-12 py-5 sticky top-0 z-20">
-      <a href="/" className="flex items-center justify-center gap-2 text-2xl font-medium
+      <a href="/" className="flex items-center justify-center gap-2 text-2xl font-light
       text-white">
         <ChatbrainLogo className="h-8 relative top-[-2px]" /> chatbrain
       </a>

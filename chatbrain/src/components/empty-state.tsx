@@ -28,8 +28,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn(
-      "bg-muted/0 border-border text-center",
-      "border-2 border-dashed rounded-xl p-14 w-full w-[550px]",
+      "bg-muted/0 text-center",
+      "border-2 border-dashed border-gray-500 rounded-xl p-14 w-49",
       "group transition duration-300 ease-in-out hover:duration-200",
       className
     )}>
@@ -60,9 +60,9 @@ export function EmptyState({
           </div>
         )}
       </div>
-      <h2 className="text-foreground font-medium mt-6">{title}</h2>
-      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{description}</p>
-      <div className="flex justify-center">
+      <h2 className="text-gray text-lg text font-medium mt-10">{title}</h2>
+      <p className="text-md mt-1 whitespace-pre-line text-gray-400">{description}</p>
+      <div className="flex justify-center mt-4">
         {action && (
           <Button
             onClick={action.onClick}

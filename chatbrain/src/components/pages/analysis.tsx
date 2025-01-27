@@ -75,7 +75,7 @@ const TextInputSection = ({
 
   return (
     <div className={cn(
-      "bg-muted/0 border-border text-center",
+      "bg-muted/0 text-center",
       "border-2 border-dashed rounded-xl p-2 w-[550px]",
       "group transition duration-300 ease-in-out hover:duration-200"
     )}>
@@ -170,7 +170,7 @@ function Analysis() {
 
   return (
     <div className="
-      bg-muted/60 border-border text-center border-2 rounded-xl p-14
+      border-none text-center rounded-xl p-5
       items-center flex flex-col transition-all duration-300 ease-in-out
       overflow-hidden
     ">

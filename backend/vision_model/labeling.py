@@ -322,6 +322,6 @@ def organize_dataset(csv_path, src_img_dir, output_dir, train_ratio=0.8, seed=42
 
 
 if __name__ == "__main__":
-    label_directory("./dataset/raw", "./dataset/labels.csv")
+    # label_directory("./dataset/raw", "./dataset/labels.csv")
     # visualize_from_csv("dataset/raw/1000012011.jpeg", "dataset/labels.csv")
-    # organize_dataset("dataset/labels.csv", "dataset/raw", "dataset", train_ratio=0.8, seed=42)
+    organize_dataset("dataset/labels.csv", "dataset/raw", "dataset", train_ratio=0.8, seed=42)

@@ -39,34 +39,29 @@ const TabsContainer = ({ tabs }: TabsContainerProps) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-card border border-border rounded-lg shadow overflow-hidden">
-    {/* Tab Headers */}
-        <div className="flex">
+    <div className="max-w-4xl mx-auto rounded-lg shadow overflow-hidden">
+      {/* Tab Headers */}
+      <div className="flex">
         {tabs.map((tab, index) => (
             <button
             key={index}
             onClick={() => handleTabClick(index)}
-            className={`flex-1 px-4 py-3 text-sm font-medium relative transition-colors
-                ${index === activeTab 
-                  ? 'text-primary bg-primary/10'
-                  : 'text-foreground hover:bg-muted-foreground/10'
-                }`}              
+            className={`rounded-none flex-1 px-4 py-3 text-lg font-light relative transition-colors text-white
+              ${index === activeTab 
+              ? 'bg-primary/0'
+              : 'text-primary bg-primary/30 hover:bg-muted-foreground/20'
+              }
+              ${index === 0 ? 'rounded-lb-lg' : ''}
+              ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}              
             >
-                {tab.title}
-                {index === activeTab && (
-                <motion.div 
-                    className="absolute bottom-0 left-0 w-full h-1 bg-primary"
-                    layoutId="tab-underline"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                />
-                )}
+            {tab.title}
             </button>
-            ))}
-        </div>
+        ))}
+      </div>
 
       {/* Tab Content */}
-      <div className="relative overflow-visible min-h-[200px]">
-          <AnimatePresence mode='wait' custom={direction}>
+      <div className="relative">
+        <AnimatePresence mode='wait' custom={direction}>
           <motion.div
             key={activeTab}
             custom={direction}
@@ -74,7 +69,7 @@ const TabsContainer = ({ tabs }: TabsContainerProps) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute inset-0 p-6"
+            className="w-full p-6"
           >
             {tabs[activeTab].component}
           </motion.div>

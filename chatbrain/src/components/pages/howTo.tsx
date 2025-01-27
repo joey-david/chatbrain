@@ -36,7 +36,7 @@ const InputModeCard: React.FC<InputModeCardProps> = ({ title, description, steps
             <h3 className="font-medium">{step.title}</h3>
             <p className="text-sm text-muted-foreground">{step.description}</p>
             {step.gif && (
-              <div className="mt-2 rounded-lg overflow-hidden border border-border">
+              <div className="mt-2 rounded-lg overflow-hidden">
                 <img 
                   src="/api/placeholder/400/200" 
                   alt={`How to ${step.title.toLowerCase()}`}
@@ -133,7 +133,7 @@ const HowTo = () => {
     { title: "Audio", component: <AudioMode /> }
   ];
 
-  return <TabsContainer tabs={tabs} />;
+  return <TabsContainer tabs={tabs}/>;
 };
 
 export default HowTo;
