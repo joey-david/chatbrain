@@ -75,7 +75,7 @@ const ScoreRow = ({ label, value }: { label: string; value: number }) => (
 );
 
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-card text-gray-200 rounded-2xl shadow-sm ${className || ""}`}>
+  <div className={`text-gray-200 rounded-2xl shadow-sm ${className || ""}`}>
     {children}
   </div>
 );
@@ -101,12 +101,12 @@ export function LLMResults({ data }: { data: ResultsData }) {
       </div>
 
       {/* User Metrics */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(Object.keys(users).length, 3)} gap-6 bg-black/35 border-border text-center`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(Object.keys(users).length, 3)} md:divide-x-2 md:divide-gray-500/50 gap-6 bg-black/35 border-border text-center rounded-lg`}>
       {Object.entries(users).map(([username, metrics]) => (
-        <Card key={username} className="bg-black/0">
-        <div className="p-6">
-          <h3 className="text-lg mb-6">{username}</h3>
-          <div className="space-y-4">
+        <Card key={username} className="bg-black/0 rounded-none">
+          <div className="p-6">
+        <h3 className="text-lg mb-6">{username}</h3>
+        <div className="space-y-4">
           <ScoreRow label="Assertiveness" value={metrics.assertiveness} />
           <ScoreRow label="Positiveness" value={metrics.positiveness} />
           <ScoreRow label="Affection" value={metrics.affection_towards_other} />
@@ -114,8 +114,8 @@ export function LLMResults({ data }: { data: ResultsData }) {
           <ScoreRow label="Rationality" value={metrics.rationality} />
           <ScoreRow label="Emotiveness" value={metrics.emotiveness} />
           <ScoreRow label="IQ Estimate" value={metrics.IQ_estimate} />
-          </div>
         </div>
+          </div>
         </Card>
       ))}
       </div>

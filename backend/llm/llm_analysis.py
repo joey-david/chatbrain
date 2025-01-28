@@ -114,7 +114,7 @@ def getSystemPrompt(users, nicknames):
     }}
   """
 
-def promptToJSON(prompt, maxOutputTokens, users, nicknames, model_name="deepseek-ai/DeepSeek-V3"):
+def promptToJSON(prompt, maxOutputTokens, users=[], nicknames=[], model_name="deepseek-ai/DeepSeek-V3"):
   # build the system prompt
   systemPrompt = getSystemPrompt(users, nicknames)
 

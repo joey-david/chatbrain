@@ -79,7 +79,6 @@ def getBoxesFromImages(images, visionModel):
         processed_results.append({
             'boxes': final_boxes,
             'oneSided': oneSided,
-            'result_obj': r
         })
 
     return processed_results

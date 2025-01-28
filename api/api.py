@@ -43,7 +43,7 @@ def get_metadata_analysis():
     elif fileType == 'audio':
         raise NotImplementedError
     elif fileType == 'image':
-        raise NotImplementedError
+        response = utilities.getImageMetadata(files)
     else:
         raise Exception("Unsupported file type")
     return response
