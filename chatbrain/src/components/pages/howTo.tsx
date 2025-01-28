@@ -3,13 +3,13 @@ import { TextSelect, LucideFileStack, AudioLines } from 'lucide-react';
 import TabsContainer from '@/components/ui/tabsContainers';
 
 interface Step {
-  title: string;
+  title: string | JSX.Element;
   description: string;
   gif?: boolean;
 }
 
 interface InputModeCardProps {
-  title: string;
+  title: string | JSX.Element;
   description: string;
   steps: Step[];
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;

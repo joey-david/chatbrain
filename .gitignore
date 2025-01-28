@@ -5,7 +5,7 @@
 **/todo.txt
 **/node_modules/
 data/**
-backend/vision_model/dataset/*
+backend/vision/dataset/*
 notes.md
 **/*.pkl
 data/*.txt

@@ -8,7 +8,7 @@ https://docs.ultralytics.com/modes/train/#introduction
 
 
 ### Custom dataset
-Built a finetuning dataset from my own messages, labeled with my `backend/vision_model/labeling.py` program.
+Built a finetuning dataset from my own messages, labeled with my `backend/vision/labeling.py` program.
 
 ## Metrics rating and insight elaboration
 ### Inpersonal chat metrics
