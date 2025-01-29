@@ -37,40 +37,14 @@ def calculate_api_cost(chat_completion):
 
   return total_cost
 
-def getSystemPrompt(users, nicknames):
+def getSystemPrompt(users):
   
-  if len(users) == len(nicknames) == 0:
+  if users == ["unidentifiable"]:
     user_details = """Since this file contains no user information, do your best to find the users' names from the prompt.
       If you absolutely can't, name them User1, User2, etc."""
-    user_metrics = """
-      for each user in the conversation:
-        username: {{
-      "assertiveness": int,
-      "positiveness": int,
-      "affection_towards_other": int,
-      "romantic_attraction_towards_other": int,
-      "rationality": int,
-      "emotiveness": int,
-      "IQ_estimate": int
-    }}"""
-      
 
-
-  if len(users) != len(nicknames):
-    raise ValueError("Number of users and nicknames must match.")
-  
-
-  user_details = "\n".join([f"{i+1}) {user} (nickname: {nickname})" for i, (user, nickname) in enumerate(zip(users, nicknames))])
-  user_metrics = "\n".join([f"""
-    "{user}": {{
-      "assertiveness": int,
-      "positiveness": int,
-      "affection_towards_other": int,
-      "romantic_attraction_towards_other": int,
-      "rationality": int,
-      "emotiveness": int,
-      "IQ_estimate": int
-    }}""" for user in users])
+  else:
+    user_details = ", ".join([f"{user}" for user in users if user != "unidentifiable"])
 
   return f"""
     Act as a hyperintelligent psychiatrist capable of infering a complete and radical understanding of people and their characteristics from a simple conversation.
@@ -108,15 +82,23 @@ def getSystemPrompt(users, nicknames):
     "intensity_score_out_of_100": int
     }},
     "users": {{
-    {user_metrics}
+      // FOR EACH USER in {user_details}
+      username: {{
+      "assertiveness": int,
+      "positiveness": int,
+      "affection_towards_other": int,
+      "romantic_attraction_towards_other": int,
+      "rationality": int,
+      "emotiveness": int,
+      "IQ_estimate": int
     }},
     "insights": ["Insight 1", "Insight 2", "Insight 3"]
     }}
   """
 
-def promptToJSON(prompt, maxOutputTokens, users=[], nicknames=[], model_name="deepseek-ai/DeepSeek-V3"):
+def promptToJSON(prompt, maxOutputTokens, users=[], model_name="deepseek-ai/DeepSeek-V3"):
   # build the system prompt
-  systemPrompt = getSystemPrompt(users, nicknames)
+  systemPrompt = getSystemPrompt(users)
 
   #check for outsanding prices, get general token information
   price, tokenCount = dtok.apiCallPrice(prompt + systemPrompt, maxOutputTokens, model_name)

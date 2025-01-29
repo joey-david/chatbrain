@@ -16,21 +16,22 @@ from PIL import Image
 
 # Text analysis
 
-def getTextAnalysis(input_files, start_date=None, end_date=None, start_time=None, end_time=None):
+def getTextAnalysis(input_files):
     file = input_files[-1]
-    file = file.read().decode("utf-8")
-    compressed_string, msgCount, n_users, user_list, nickname_list = compressFileForPlatform(file)
-    print(f'Compressed string: {compressed_string}')
+    string = file.read().decode("utf-8")
+    platform = local_analysis.detect_platform(string)
+    print(f"Platform detected: {platform}")
+    metadata = local_analysis.metadata_analysis(string, "text", platform)
+    users = [user for user in metadata.keys() if user not in ["total_messages", "total_characters"]]
     print("Starting LLM analysis...")
-    json, response = llm_analysis.promptToJSON(prompt=compressed_string, users=user_list, nicknames=nickname_list, maxOutputTokens=2000)
+    json, response = llm_analysis.promptToJSON(prompt=string, users=users, maxOutputTokens=2000)
     return json, response
 
 def getTextMetadata(input_files):
     file = input_files[-1]
-    file = file.read().decode("utf-8")
-    compressed_string, msgCount, n_users, user_list, nickname_list = compressFileForPlatform(file)
-    metadata = local_analysis.metadata_analysis(compressed_string, user_list, nickname_list)
-    print(metadata)
+    string = file.read().decode("utf-8")
+    platform = local_analysis.detect_platform(string)
+    metadata = local_analysis.metadata_analysis(string, "text", platform)
     return metadata
 
 def fileToText(file):
@@ -38,18 +39,6 @@ def fileToText(file):
     if type == 'file':
         file = file.read().decode("utf-8")
     return file
-
-def compressFileForPlatform(file):
-    platform = chat_shrinker.detect_platform(file)
-    print(f"Platform detected: {platform}")
-    if platform == "discord":
-        return chat_shrinker.shrink_discord_chat(file, output_file="./data/discord_shrunk.txt")
-    elif platform == "whatsapp":
-        return chat_shrinker.shrink_whatsapp_chat(file, output_file="./data/whatsapp_shrunk.txt")
-    else:
-        print(f"Caution ! Platform not supported yet.")
-        string = fileToText(file)
-        return string, 0, 0, [], []        
 
 
 # Image analysis
@@ -80,13 +69,14 @@ def getImageAnalysis(input_files, vision_model):
         # Extract text from boxes
         text_list = ocr.extract_text_from_boxes(pil_image, boxes)
         conversation += "\n".join(text_list) + "\n"
+    conversation = conversation.replace(" AM", "").replace(" PM", "")
     
     json, response = llm_analysis.promptToJSON(prompt=conversation, maxOutputTokens=2000)
     return json, response
 
-def getImageMetadata(input_files):
+def getImageMetadata(input_files, vision_model):
     converted_files = convert_input_images(input_files)
-    boxes_results = classifier.getBoxesFromImages(converted_files)
+    boxes_results = classifier.getBoxesFromImages(converted_files, vision_model)
     conversation = ""
 
     # Iterate through results with index
@@ -101,6 +91,10 @@ def getImageMetadata(input_files):
         # Extract text from boxes
         text_list = ocr.extract_text_from_boxes(pil_image, boxes)
         conversation += "\n".join(text_list) + "\n"
-    
-    metadata = local_analysis.metadata_analysis(conversation)
+
+    conversation = conversation.replace(" AM", "").replace(" PM", "")
+    with open("data/sucide_discord.txt", "w") as f:
+        f.write(conversation)
+
+    metadata = local_analysis.metadata_analysis(conversation, "image", local_analysis.detect_platform(conversation))
     return metadata
