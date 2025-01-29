@@ -85,4 +85,22 @@ def getImageAnalysis(input_files, vision_model):
     return json, response
 
 def getImageMetadata(input_files):
-    return "Not implemented yet"
+    converted_files = convert_input_images(input_files)
+    boxes_results = classifier.getBoxesFromImages(converted_files)
+    conversation = ""
+
+    # Iterate through results with index
+    for i, img_result in enumerate(boxes_results):
+        boxes = img_result['boxes']
+        one_sided = img_result['oneSided']
+        
+        # Convert OpenCV image to PIL Image (RGB format)
+        cv_image = converted_files[i]
+        pil_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
+        
+        # Extract text from boxes
+        text_list = ocr.extract_text_from_boxes(pil_image, boxes)
+        conversation += "\n".join(text_list) + "\n"
+    
+    metadata = local_analysis.metadata_analysis(conversation)
+    return metadata
