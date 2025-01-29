@@ -2,11 +2,10 @@ function Footer() {
     const currentYear = new Date().getFullYear()
 
     const technologies = [
-        { href: "https://vitejs.dev", src: "/vite.svg", alt: "Vite Logo" },
-        { href: "https://tailwindcss.com", src: "/tailwind.svg", alt: "Tailwind CSS Logo" },
         { href: "https://python.org", src: "/python.svg", alt: "Python Logo" },
         { href: "https://react.dev", src: "/react.svg", alt: "React Logo" },
-        { href: "https://github.com/deepseek-ai/DeepSeek-LLM", src: "/deepseek_logo.png", alt: "DeepSeek Logo" },
+        { href: "https://tailwindcss.com", src: "/tailwind.svg", alt: "Tailwind CSS Logo" },
+        { href: "https://github.com/deepseek-ai/DeepSeek-LLM", src: "/deepseek.svg", alt: "DeepSeek Logo" },
     ]
 
     return (

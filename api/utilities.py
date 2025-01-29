@@ -45,6 +45,12 @@ def fileToText(file):
 
 def convert_input_images(input_files):
         converted_files = []
+        # if input_files is a list of filepaths instead of file objects
+        if type(input_files[0]) == str:
+            for file in input_files:
+                image = cv2.imread(file)
+                converted_files.append(image)
+            return converted_files
         for file in input_files:
             file_content = file.read()
             np_array = np.frombuffer(file_content, np.uint8)
@@ -68,33 +74,83 @@ def getImageAnalysis(input_files, vision_model):
         
         # Extract text from boxes
         text_list = ocr.extract_text_from_boxes(pil_image, boxes)
-        conversation += "\n".join(text_list) + "\n"
-    conversation = conversation.replace(" AM", "").replace(" PM", "")
     
     json, response = llm_analysis.promptToJSON(prompt=conversation, maxOutputTokens=2000)
     return json, response
 
+
 def getImageMetadata(input_files, vision_model):
     converted_files = convert_input_images(input_files)
-    boxes_results = classifier.getBoxesFromImages(converted_files, vision_model)
+    img_results = classifier.getBoxesFromImages(converted_files, vision_model)
     conversation = ""
 
-    # Iterate through results with index
-    for i, img_result in enumerate(boxes_results):
+    for i, img_result in enumerate(img_results):
         boxes = img_result['boxes']
-        one_sided = img_result['oneSided']
-        
-        # Convert OpenCV image to PIL Image (RGB format)
+        # convert image to format readable by OCR
         cv_image = converted_files[i]
         pil_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-        
-        # Extract text from boxes
-        text_list = ocr.extract_text_from_boxes(pil_image, boxes)
-        conversation += "\n".join(text_list) + "\n"
+        # extract text from boxes
+        img_results[i]['boxes'] = ocr.extract_text_from_boxes(pil_image, boxes)
+    
+    contactName = findContactName(img_results)
+    appended_results = addNames(img_results, contactName)
+    print(appended_results)
 
-    conversation = conversation.replace(" AM", "").replace(" PM", "")
-    with open("data/sucide_discord.txt", "w") as f:
-        f.write(conversation)
-
+    conversation = buildConversation(appended_results)
+    print(conversation)
     metadata = local_analysis.metadata_analysis(conversation, "image", local_analysis.detect_platform(conversation))
     return metadata
+
+def addNames(img_results, contactName):
+    """appends a name at the start of a box's text depending on the posClass of the box and the oneSidedness of the image"""
+    processed_results = []
+    for img_result in img_results:
+        if img_result['oneSided'] is True:
+            processed_results.append({'boxes': img_result['boxes'], 'oneSided': True})
+            continue
+        processed_boxes = []
+        for box in img_result['boxes']:
+            if box['conf'] > 0.5:
+                if box['cls'] == 0:
+                    box['text'] = f"{contactName}: {box['text']}\n"
+                elif box['cls'] == 1:
+                    box['text'] = f"You: {box['text']}\n"
+            else:
+                if box['posClass'] == 0:
+                    box['text'] = f"{contactName}: {box['text']}\n"
+                elif box['posClass'] == 1:
+                    box['text'] = f"You: {box['text']}\n"
+            processed_boxes.append(box)
+        processed_results.append({'boxes': processed_boxes, 'oneSided': False})
+    return processed_results
+
+def buildConversation(appended_results):
+    conversation = ""
+    for img_result in appended_results:
+        for box in img_result['boxes']:
+            if box['text'] != "" and box['cls'] != 2:
+                conversation += box['text']
+    return conversation
+
+def findContactName(img_results):
+    """Finds the contact name in the set of images (highest conf, class 2)"""
+    maxConf = 0
+    contactName = None
+    for img_result in img_results:
+        for box in img_result['boxes']:
+            if box['cls'] == 2:
+                if box['conf'] > maxConf:
+                    maxConf = box['conf']
+                    contactName = box['text']
+    # remove non-alphanumeric characters
+    if contactName:
+        contactName = ''.join(c for c in contactName.split() if c.isalnum())
+    return contactName
+
+if __name__ == "__main__":
+    # Load image
+    model_path = "backend/vision/best.pt"
+    vision_model = classifier.YOLO(model_path)
+    image_paths = ["IMG_1590.png"]
+    metadata = getImageMetadata(image_paths, vision_model)
+    print(metadata)

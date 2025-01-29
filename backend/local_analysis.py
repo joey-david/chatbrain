@@ -43,6 +43,7 @@ def parse_generic_line(line: str, current_user: str = None):
     if match:
         user, message = match.group(1), match.group(2)
         return user, message
+    return current_user, line
 
 def update_stats(stats: Dict[str, Dict[str, int]], user: str, message: str):
     if user not in stats:

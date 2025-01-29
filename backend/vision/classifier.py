@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import torch
 from PIL import Image
-from backend.vision.ocr import extract_text_from_boxes
+# from backend.vision.ocr import extract_text_from_boxes
 
 def getBoxesFromImages(images, visionModel):
     results = visionModel(images)
@@ -85,6 +85,7 @@ def getBoxesFromImages(images, visionModel):
 
 # Usage example
 if __name__ == "__main__":
+    from ocr import extract_text_from_boxes
     model = YOLO("backend/vision/best.pt")
     image_paths = ["backend/vision/dataset/raw/IMG_1400.PNG", "IMG_1590.png"]
 
@@ -100,6 +101,5 @@ if __name__ == "__main__":
     # 4. Print custom results
     for i, img_result in enumerate(processed_results):
         list = extract_text_from_boxes(Image.open(image_paths[i]), img_result['boxes'])
-        print(f"Image {i+1} text:")
-        for text in list:
-            print(text) 
+        print(f"Image {i+1}:")
+        print(processed_results[i])
