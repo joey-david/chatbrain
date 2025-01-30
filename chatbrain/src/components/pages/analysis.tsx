@@ -1,179 +1,155 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { validateFiles } from "@/utils/fileValidation"
-import { MetadataAnalysis } from "@/components/metadataAnalysis"
-import { LLMAnalysis } from "@/components/LLMAnalysis"
 import { MetadataResults } from "@/components/metadataResults"
 import { LLMResults } from "@/components/LLMResults"
 import { EmptyState } from "@/components/empty-state"
-import { TextSelect, LucideFileStack, AudioLines, ArrowUpFromLine, Undo2 } from "lucide-react"
+import { TextSelect, LucideFileStack, AudioLines } from "lucide-react"
 import { LoadingBar } from "@/components/ui/loadingBar"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { TextInputSection } from "@/components/ui/textInputSelection"
 
-// Define FileType type
 type FileType = 'txt' | 'img' | 'aud' | null
+type AnalysisState = 'idle' | 'metadata' | 'llm' | 'complete'
 
-// Custom hook for managing analysis progress
-const useAnalysisProgress = () => {
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState("")
-  const progressInterval = useRef<NodeJS.Timeout>()
-
-  const updateStatus = (isLoading: boolean, metadataExists: boolean, llmExists: boolean) => {
-    if (!isLoading) return setStatus("")
-    if (!metadataExists) return setStatus("Analyzing metadata...")
-    if (!llmExists) return setStatus("Running LLM analysis...")
-    setStatus("Analysis complete!")
-  }
-
-  const startProgressInterval = (
-    targetProgress: number,
-    increment: number,
-    intervalTime: number
-  ) => {
-    progressInterval.current = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= targetProgress) {
-          clearInterval(progressInterval.current as NodeJS.Timeout)
-          return prev
-        }
-        return Math.min(prev + increment, targetProgress)
-      })
-    }, intervalTime)
-  }
-
-  const clearCurrentInterval = () => {
-    if (progressInterval.current) {
-      clearInterval(progressInterval.current)
-    }
-  }
-
-  return {
-    progress,
-    status,
-    setProgress,
-    updateStatus,
-    startProgressInterval,
-    clearCurrentInterval
-  }
-}
-
-// Text input component for direct text entry
-const TextInputSection = ({
-  onCancel,
-  onSubmit
-}: {
-  onCancel: () => void
-  onSubmit: (text: string) => void
-}) => {
-  const [typedText, setTypedText] = useState("")
-
-  const handleSubmit = () => {
-    onSubmit(typedText)
-    setTypedText("")
-  }
-
-  return (
-    <div className={cn(
-      "bg-muted/0 text-center",
-      "border-2 border-dashed border-gray-500 rounded-xl p-2 w-[600px]",
-      "group transition duration-300 ease-in-out hover:duration-200"
-    )}>
-      <textarea
-        className="bg-muted/0 border-none p-2 w-full rounded text-gray-100 resize-none placeholder-gray-400 focus:outline-none"
-        rows={10}
-        placeholder="Type or paste your text here..."
-        value={typedText}
-        onChange={(e) => setTypedText(e.target.value)}
-      />
-      <div className="flex justify-center gap-2 mb-3">
-        <Button onClick={onCancel} className="gap-1 text-black" variant="outline">
-          <Undo2 className="w-4 gap-2"/> Cancel
-        </Button>
-        <Button onClick={handleSubmit} className="gap-1">
-          <ArrowUpFromLine className="w-4 gap-2"/> Submit
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-// Main analysis component
 function Analysis() {
+  // File handling state
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [metadataResults, setMetadataResults] = useState(null)
-  const [llmResults, setLlmResults] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [fileType, setFileType] = useState<FileType | null>(null)
+  const [fileType, setFileType] = useState<FileType>(null)
   const [showTextInput, setShowTextInput] = useState(false)
 
-  const {
-    progress,
-    status,
-    setProgress,
-    updateStatus,
-    startProgressInterval,
-    clearCurrentInterval
-  } = useAnalysisProgress()
+  // Analysis state
+  const [metadataResults, setMetadataResults] = useState<any>(null)
+  const [conversation, setConversation] = useState("")
+  const [users, setUsers] = useState<string[]>([])
+  const [llmResults, setLlmResults] = useState<any>(null)
+  const [analysisState, setAnalysisState] = useState<AnalysisState>('idle')
 
-  // Handle file validation and state updates
-  const handleFilesSelected = (files: File[]) => {
+  // Progress tracking
+  const [progress, setProgress] = useState(0)
+  const [status, setStatus] = useState("")
+  
+  // Fetch guards
+  const metadataFetchedRef = useRef(false)
+  const llmFetchedRef = useRef(false)
+
+  // Reset state when files change
+  const resetState = useCallback(() => {
+    metadataFetchedRef.current = false
+    llmFetchedRef.current = false
+    setMetadataResults(null)
+    setConversation("")
+    setUsers([])
+    setLlmResults(null)
+    setAnalysisState('idle')
+    setProgress(0)
+    setStatus("")
+  }, [])
+
+  // File handling
+  const handleFilesSelected = useCallback((files: File[]) => {
     try {
       validateFiles(files)
-      setSelectedFiles(files)
-      setFileType(detectFileType(files[0]))
-      setIsLoading(true)
+      const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name))
+      setSelectedFiles(sortedFiles)
+      setFileType(detectFileType(sortedFiles[0]))
+      resetState()
+      setAnalysisState('metadata')
       setProgress(5)
     } catch (error) {
       console.error("File validation error:", error)
     }
-  }
+  }, [resetState])
 
-  // Determine file type from File object
-  const detectFileType = (file: File): FileType => {
-    if (file.name.endsWith(".txt")) return 'txt'
-    if (file.type.startsWith("image")) return 'img'
-    if (file.type.startsWith("audio")) return 'aud'
-    return null
-  }
-
-  // Handle text submission as file
-  const handleTextSubmit = (text: string) => {
+  const handleTextSubmit = useCallback((text: string) => {
     const blob = new Blob([text], { type: "text/plain" })
     const file = new File([blob], "input.txt", { type: "text/plain" })
     handleFilesSelected([file])
     setShowTextInput(false)
-  }
+  }, [handleFilesSelected])
 
-  // Progress management effects
+  // Metadata analysis
   useEffect(() => {
-    clearCurrentInterval()
+    if (!selectedFiles.length || metadataFetchedRef.current || analysisState !== 'metadata') return
 
-    if (isLoading) {
-      if (!metadataResults && progress < 30) {
-        startProgressInterval(30, 1, 100)
-      } else if (metadataResults && !llmResults && progress < 95) {
-        startProgressInterval(95, 1, 100)
-      } else if (llmResults) {
-        setProgress(100)
+    async function fetchMetadata() {
+      try {
+        const formData = new FormData()
+        selectedFiles.forEach(file => formData.append('files', file))
+        
+        const response = await fetch('http://localhost:5000/metadata', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!response.ok) throw new Error('Metadata fetch failed')
+        
+        const { metadata, conversation } = await response.json()
+        const userList = Object.keys(metadata).filter(key => 
+          !['total_messages', 'total_characters'].includes(key)
+        )
+        
+        setMetadataResults(metadata)
+        setConversation(conversation)
+        setUsers(userList)
+        metadataFetchedRef.current = true
+        setAnalysisState('llm')
+        setProgress(50)
+      } catch (error) {
+        console.error('Metadata error:', error)
+        setAnalysisState('idle')
       }
-    } else {
-      setProgress(0)
     }
-  }, [isLoading, metadataResults, llmResults])
 
-  // Status updates
+    fetchMetadata()
+  }, [selectedFiles, analysisState])
+
+  // LLM analysis
   useEffect(() => {
-    updateStatus(isLoading, !!metadataResults, !!llmResults)
-  }, [isLoading, metadataResults, llmResults])
+    if (!conversation || !users.length || llmFetchedRef.current || analysisState !== 'llm') return
+
+    async function fetchLLM() {
+      try {
+        const response = await fetch('http://localhost:5000/llm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation, users })
+        })
+
+        if (!response.ok) throw new Error('LLM fetch failed')
+        
+        const results = await response.json()
+        setLlmResults(results)
+        llmFetchedRef.current = true
+        setAnalysisState('complete')
+        setProgress(100)
+      } catch (error) {
+        console.error('LLM error:', error)
+        setAnalysisState('metadata')
+      }
+    }
+
+    fetchLLM()
+  }, [conversation, users, analysisState])
+
+  // Update status based on state
+  useEffect(() => {
+    switch (analysisState) {
+      case 'metadata':
+        setStatus("Analyzing metadata...")
+        break
+      case 'llm':
+        setStatus("Running LLM analysis...")
+        break
+      case 'complete':
+        setStatus("Analysis complete!")
+        break
+      default:
+        setStatus("")
+    }
+  }, [analysisState])
 
   return (
-    <div className="
-      border-none text-center rounded-xl p-5
-      items-center flex flex-col transition-all duration-300 ease-in-out
-      overflow-hidden
-    ">
+    <div className="border-none text-center rounded-xl p-5 items-center flex flex-col transition-all duration-300 ease-in-out overflow-hidden">
       <input
         type="file"
         ref={fileInputRef}
@@ -189,7 +165,7 @@ function Analysis() {
         />
       ) : (
         <EmptyState
-          title={selectedFiles.length ? `Selected: ${selectedFiles[0].name}` : "No Files Uploaded"}
+          title={selectedFiles.length ? `Selected: ${selectedFiles.map(file => file.name).join(', ')}` : "No Files Uploaded"}
           description={selectedFiles.length 
             ? `${selectedFiles.length} file(s) selected - ${fileType?.toUpperCase() || 'Unknown'} type`
             : "Please upload a chat log, screenshots, or an audio recording."}
@@ -204,26 +180,24 @@ function Analysis() {
           }}
         />
       )}
+
       {metadataResults && <MetadataResults data={metadataResults} />}
-      {isLoading && <LoadingBar progress={progress} status={status} />}
-      {!isLoading && llmResults && (
+      {analysisState !== 'idle' && <LoadingBar progress={progress} status={status} />}
+      {analysisState === 'complete' && llmResults && (
         <div className="max-w-7xl mt-6 w-full">
           <LLMResults data={llmResults} />
         </div>
       )}
-
-      {selectedFiles.length > 0 && (
-        <>
-          <MetadataAnalysis files={selectedFiles} onComplete={setMetadataResults} />
-          <LLMAnalysis
-            files={selectedFiles}
-            onComplete={setLlmResults}
-            onLoading={setIsLoading}
-          />
-        </>
-      )}
     </div>
   )
+}
+
+// Utility function
+const detectFileType = (file: File): FileType => {
+  if (file.name.endsWith(".txt")) return 'txt'
+  if (file.type.startsWith("image")) return 'img'
+  if (file.type.startsWith("audio")) return 'aud'
+  return null
 }
 
 export { Analysis }

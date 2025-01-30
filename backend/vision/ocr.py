@@ -34,9 +34,9 @@ def treatLine(line, box_class):
     - no double spaces
     - no leading or trailing spaces
     - fixed date/time format
-    - if class is 2 (contact), remove all spaces and non-alphanumeric characters"""
+    - if class is 2 (contact), remove and non-alphanumeric characters (leave spaces)"""
     if box_class == 2:
-        line = re.sub(r'\W+', '', line)  # Remove all non-alphanumeric characters
+        line = re.sub(r'[^\w\s]', '', line).strip()  # Remove all non-alphanumeric characters except spaces
     else:
         # Fix time format
         line = re.sub(r'(\d{1,2})[.,;](\d{2})', r'\1:\2', line)
