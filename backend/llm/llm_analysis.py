@@ -118,22 +118,22 @@ def promptToJSON(prompt, maxOutputTokens, users=[], model_name="deepseek-ai/Deep
 
 def api_call(model, maxOutputTokens, userPrompt, systemPrompt=None):
 
-  response = client.chat.completions.create(
-    model=model,
-    messages=[
-      {"role": "system", "content": systemPrompt},
-      {"role": "user", "content": userPrompt}
-    ],
-    max_tokens=maxOutputTokens,
-    response_format={'type': 'json_object'}
-  )
+  # response = client.chat.completions.create(
+  #   model=model,
+  #   messages=[
+  #     {"role": "system", "content": systemPrompt},
+  #     {"role": "user", "content": userPrompt}
+  #   ],
+  #   max_tokens=maxOutputTokens,
+  #   response_format={'type': 'json_object'}
+  # )
   # # pickle the response object
   # with open("chat_completion.pkl", "wb") as f:
   #   pickle.dump(response, f)
 
   # extract the response object from the pickle file
-  # with open("chat_completion.pkl", "rb") as f:
-  #   response = pickle.load(f)
+  with open("chat_completion.pkl", "rb") as f:
+    response = pickle.load(f)
 
   return (response)
 

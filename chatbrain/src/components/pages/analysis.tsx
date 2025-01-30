@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/empty-state"
 import { TextSelect, LucideFileStack, AudioLines } from "lucide-react"
 import { LoadingBar } from "@/components/ui/loadingBar"
 import { TextInputSection } from "@/components/ui/textInputSelection"
+import { ImageResults } from "@/components/imageResults"
 
 type FileType = 'txt' | 'img' | 'aud' | null
 type AnalysisState = 'idle' | 'metadata' | 'llm' | 'complete'
@@ -21,6 +22,7 @@ function Analysis() {
   const [metadataResults, setMetadataResults] = useState<any>(null)
   const [conversation, setConversation] = useState("")
   const [users, setUsers] = useState<string[]>([])
+  const [imageResults, setImageResults] = useState<any>(null)
   const [llmResults, setLlmResults] = useState<any>(null)
   const [analysisState, setAnalysisState] = useState<AnalysisState>('idle')
 
@@ -83,7 +85,7 @@ function Analysis() {
 
         if (!response.ok) throw new Error('Metadata fetch failed')
         
-        const { metadata, conversation } = await response.json()
+        const { metadata, conversation, img_results } = await response.json()
         const userList = Object.keys(metadata).filter(key => 
           !['total_messages', 'total_characters'].includes(key)
         )
@@ -91,9 +93,18 @@ function Analysis() {
         setMetadataResults(metadata)
         setConversation(conversation)
         setUsers(userList)
+        if (img_results) {
+          setImageResults(img_results)
+        }
         metadataFetchedRef.current = true
-        setAnalysisState('llm')
-        setProgress(50)
+
+        if (userList.length === 0) {
+          setAnalysisState('idle')
+          setProgress(0)
+        } else {
+          setAnalysisState('llm')
+          setProgress(50)
+        }
       } catch (error) {
         console.error('Metadata error:', error)
         setAnalysisState('idle')
@@ -181,13 +192,19 @@ function Analysis() {
         />
       )}
 
+      {imageResults && fileType === 'img' && (
+        <ImageResults 
+        results={imageResults} 
+        originalFiles={selectedFiles}
+        />
+      )}
       {metadataResults && <MetadataResults data={metadataResults} />}
-      {analysisState !== 'idle' && <LoadingBar progress={progress} status={status} />}
       {analysisState === 'complete' && llmResults && (
         <div className="max-w-7xl mt-6 w-full">
           <LLMResults data={llmResults} />
         </div>
       )}
+      {analysisState !== 'idle' && <LoadingBar progress={progress} status={status} />}
     </div>
   )
 }

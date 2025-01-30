@@ -84,10 +84,9 @@ export function LLMResults({ data }: { data: ResultsData }) {
   const { conversation_metrics, users, insights } = data;
 
   return (
-    
-    <div className="w-full max-w-7xl mx-auto space-y-8 mt-6 transition duration-300 ease-in-out">
+    <div className="w-full max-w-7xl mx-auto space-y-8 mt-2 mb-6 transition duration-300 ease-in-out">
       {/* Conversation Metrics */}
-      <hr className="border-t-2 border-gray-500 mt-10" />
+      <div className='max-w-[832px] border-t-2 border-gray-500 mx-auto'/>
       <h1 className="text-white text-3xl mt-8">Large Language Model Feedback</h1>
       <div className="flex justify-center w-full">
         <Card className="bg-black/35 w-full max-w-xl">

@@ -18,8 +18,8 @@ const GradientBackground = () => {
         gradientRef.current.style.setProperty('--size', '25rem')
         gradientRef.current.style.setProperty('--speed', '15s')
         break
-      case '/analysis':
-        gradientRef.current.style.setProperty('--size', '60vw')
+      case '/use':
+        gradientRef.current.style.setProperty('--size', '70vw')
         gradientRef.current.style.setProperty('--speed', '30s')
         gradientRef.current.style.setProperty('left', '0rem')
         break

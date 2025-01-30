@@ -22,8 +22,6 @@ def get_llm_analysis():
         raise Exception("Missing required parameters: conversation and users")
     conversation = data['conversation']
     users = data['users']
-    print(f"Conversation: {conversation}")
-    print(f"Users: {users}")
     json, response = utilities.getConversationAnalysis(conversation, users)
     return json
 
@@ -38,16 +36,17 @@ def get_metadata_analysis():
             
         if fileType == 'text':
             metadata, conversation = utilities.getTextMetadata(files)
+            img_results = None
         elif fileType == 'image':
-            metadata, conversation = utilities.getImageMetadata(files, vision_model, reader)
+            metadata, conversation, img_results = utilities.getImageMetadata(files, vision_model, reader)
         elif fileType == 'audio':
             return {"error": "Audio not implemented"}, 501
         else:
             return {"error": "Unsupported file type"}, 400
-
         return {
             "metadata": metadata,
-            "conversation": conversation
+            "conversation": conversation,
+            "img_results": img_results
         }, 200
 
     except Exception as e:

@@ -17,13 +17,15 @@ export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
     return (
       <div className="inline-flex flex-col justify-center items-center mx-auto px-4 mt-10">
         <p className="text-center text-md mt-3">
-          No valid formatting detected, unable to parse metadata.
+          No valid formatting detected, unable to parse metadata from the file.
         </p>
         <p className="text-center mt-1 text-md">
-          Please use the following format for each message:
+          When typing/pasting text, please use the following format for each message:
         </p>
-        <p className="text-center text-md mt-5 mb-1 border-2 border-gray-500 p-2">
-          <code className="">John — 01/02/25, 12:34 AM: *message from the user*</code>
+        <p className="text-center text-md mt-5 mb-1 border-2 border-gray-500 py-2 px-4">
+          <code className="">
+            Username : message
+          </code>
         </p>
       </div>
     )

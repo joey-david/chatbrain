@@ -72,7 +72,7 @@ def getImageMetadata(input_files, vision_model, reader):
     print(f"final conversation: {conversation}")
     print(f"final metadata: {metadata}")
 
-    return metadata, conversation
+    return metadata, conversation, img_results
 
 def compileAnalysis(appended_results):
     """
