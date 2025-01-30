@@ -18,7 +18,7 @@ def extract_text_from_boxes(image, boxes):
             cropped_image_np = np.array(cropped_image)  # Convert PIL image to numpy array
             result = reader.readtext(cropped_image_np)
             text = " ".join([res[1] for res in result])
-            box['text'] = treatLine(text)
+            box['text'] = treatLine(text, box['cls'])
         except Exception as e:
             print(f"Error processing box: {e}")
             box['text'] = ""
@@ -30,19 +30,24 @@ def extract_text_from_boxes(image, boxes):
     print(f"OCR Time taken : {round(end_time - start_time, 2)} seconds")
     return boxes
 
-def treatLine(line):
+def treatLine(line, box_class):
     """Returns a string with:
     - no double spaces
     - no leading or trailing spaces
-    - fixed date/time format"""
-    # Fix time format
-    line = re.sub(r'(\d{1,2})[.,;](\d{2})', r'\1:\2', line)
-    # Fix date format
-    line = re.sub(r'(\d{1,2})[.,;#!\()|](\d{1,2})[.,;#!\()|](\d{2,4})', r'\1/\2/\3', line)
-    return " ".join(line.split()).strip()
-
+    - fixed date/time format
+    - if class is 2 (contact), remove all spaces and non-alphanumeric characters"""
+    if box_class == 2:
+        line = re.sub(r'\W+', '', line)  # Remove all non-alphanumeric characters
+    else:
+        # Fix time format
+        line = re.sub(r'(\d{1,2})[.,;](\d{2})', r'\1:\2', line)
+        # Fix date format
+        line = re.sub(r'(\d{1,2})[.,;#!\()|](\d{1,2})[.,;#!\()|](\d{2,4})', r'\1/\2/\3', line)
+        line = " ".join(line.split()).strip()
+    return line
 
 if __name__ == "__main__":
     # Load image
     string = "Axolotl    Yesterday at  7.25 PM Je savais pas qu'elles étaient aussi bien vues"
-    print(treatLine(string))
+    print(treatLine(string, None))
+    print(treatLine(string, 2))

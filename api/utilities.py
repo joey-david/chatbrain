@@ -17,21 +17,18 @@ from PIL import Image
 # Text analysis
 
 def getTextAnalysis(input_files):
-    file = input_files[-1]
-    string = file.read().decode("utf-8")
+    string = fileToText(input_files[-1])
     platform = local_analysis.detect_platform(string)
-    print(f"Platform detected: {platform}")
-    metadata = local_analysis.metadata_analysis(string, "text", platform)
+    metadata, conv = local_analysis.metadata_analysis(string, "text", platform)
     users = [user for user in metadata.keys() if user not in ["total_messages", "total_characters"]]
     print("Starting LLM analysis...")
-    json, response = llm_analysis.promptToJSON(prompt=string, users=users, maxOutputTokens=2000)
+    json, response = llm_analysis.promptToJSON(prompt=conv, users=users, maxOutputTokens=2000)
     return json, response
 
 def getTextMetadata(input_files):
-    file = input_files[-1]
-    string = file.read().decode("utf-8")
+    string = fileToText(input_files[-1])
     platform = local_analysis.detect_platform(string)
-    metadata = local_analysis.metadata_analysis(string, "text", platform)
+    metadata, _ = local_analysis.metadata_analysis(string, "text", platform)
     return metadata
 
 def fileToText(file):
@@ -114,7 +111,7 @@ def compileAnalysis(appended_results):
 
     # Process each image result
     for img_result in appended_results:
-        text = "\n".join(box['text'] for box in img_result['boxes'])
+        text = "\n".join(box['text'] for box in img_result['boxes'] if box['cls'] != 2)
         img_metadata, splitConv = local_analysis.metadata_analysis(text, "image", local_analysis.detect_platform(text))
         
         # Add to conversation
@@ -190,5 +187,5 @@ if __name__ == "__main__":
     # Load image
     model_path = "backend/vision/best.pt"
     vision_model = classifier.YOLO(model_path)
-    image_paths = ["IMG_1590.png", "backend/vision/dataset/raw/IMG_1400.PNG"]
+    image_paths = ["backend/vision/dataset/raw/why-did-alexa-stop-talking-to-me-she-seemed-nice-v0-xxaq456yw7ce1.webp"]
     metadata = getImageMetadata(image_paths, vision_model)

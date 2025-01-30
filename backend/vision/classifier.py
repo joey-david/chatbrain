@@ -1,7 +1,28 @@
 from ultralytics import YOLO
 import torch
 from PIL import Image
+import cv2
 # from backend.vision.ocr import extract_text_from_boxes
+
+def xywhn_to_xyxy(xywhn):
+    x, y, w, h = xywhn
+    return (x - w/2, y - h/2, x + w/2, y + h/2)
+
+# Returns the fraction of area of boxA that overlaps with boxB
+def overlap_fractions(boxA, boxB):
+    # Convert from xywhn to xyxy (normalized)
+    x1A, y1A, x2A, y2A = xywhn_to_xyxy(boxA['xywhn'])
+    x1B, y1B, x2B, y2B = xywhn_to_xyxy(boxB['xywhn'])
+    # Intersection
+    interX1, interY1 = max(x1A, x1B), max(y1A, y1B)
+    interX2, interY2 = min(x2A, x2B), min(y2A, y2B)
+    if interX2 <= interX1 or interY2 <= interY1:
+        return (0.0, 0.0)
+    interArea = (interX2 - interX1) * (interY2 - interY1)
+    # Individual areas
+    areaA = (x2A - x1A) * (y2A - y1A)
+    areaB = (x2B - x1B) * (y2B - y1B)
+    return (interArea / areaA if areaA else 0, interArea / areaB if areaB else 0)
 
 def getBoxesFromImages(images, visionModel):
     results = visionModel(images)
@@ -9,26 +30,6 @@ def getBoxesFromImages(images, visionModel):
     Process YOLO results into custom format while preserving visualization capability,
     then remove any box that overlaps more than 20% with a higher-confidence box.
     """
-
-    def xywhn_to_xyxy(xywhn):
-        x, y, w, h = xywhn
-        return (x - w/2, y - h/2, x + w/2, y + h/2)
-
-    # Returns the fraction of area of boxA that overlaps with boxB
-    def overlap_fractions(boxA, boxB):
-        # Convert from xywhn to xyxy (normalized)
-        x1A, y1A, x2A, y2A = xywhn_to_xyxy(boxA['xywhn'])
-        x1B, y1B, x2B, y2B = xywhn_to_xyxy(boxB['xywhn'])
-        # Intersection
-        interX1, interY1 = max(x1A, x1B), max(y1A, y1B)
-        interX2, interY2 = min(x2A, x2B), min(y2A, y2B)
-        if interX2 <= interX1 or interY2 <= interY1:
-            return (0.0, 0.0)
-        interArea = (interX2 - interX1) * (interY2 - interY1)
-        # Individual areas
-        areaA = (x2A - x1A) * (y2A - y1A)
-        areaB = (x2B - x1B) * (y2B - y1B)
-        return (interArea / areaA if areaA else 0, interArea / areaB if areaB else 0)
 
     processed_results = []
     for r in results:
@@ -85,21 +86,24 @@ def getBoxesFromImages(images, visionModel):
 
 # Usage example
 if __name__ == "__main__":
-    from ocr import extract_text_from_boxes
     model = YOLO("backend/vision/best.pt")
-    image_paths = ["backend/vision/dataset/raw/IMG_1400.PNG", "IMG_1590.png"]
+    image_paths = ["backend/vision/dataset/raw/why-did-alexa-stop-talking-to-me-she-seemed-nice-v0-xxaq456yw7ce1.webp"]
 
-    # Display bounding boxes    
-    # for i, r in enumerate(yolo_results):
-    #     im_bgr = r.plot()  # BGR-order numpy array
-    #     im_rgb = Image.fromarray(im_bgr[..., ::-1])  # Convert to PIL image
-    #     im_rgb.show()
-        
     # 3. Get processed data
     processed_results = getBoxesFromImages(image_paths, model)
+    from ocr import extract_text_from_boxes
     
-    # 4. Print custom results
-    for i, img_result in enumerate(processed_results):
-        list = extract_text_from_boxes(Image.open(image_paths[i]), img_result['boxes'])
-        print(f"Image {i+1}:")
-        print(processed_results[i])
+    # Display bounding boxes using built-in ultralytics function
+    for i, r in enumerate(model(image_paths)):
+        r.plot()  # This will display the image with bounding boxes
+    
+    # 4. Extract text from boxes
+    for i, r in enumerate(processed_results):
+        # Load image
+        image = Image.open(image_paths[i])
+        # Extract text from boxes
+        boxes = extract_text_from_boxes(image, r['boxes'])
+        for b in boxes:
+            print(b['text'], b['cls'])
+        
+
