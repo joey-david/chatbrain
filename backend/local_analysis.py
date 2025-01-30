@@ -14,7 +14,7 @@ def parse_discord_line(line: str) -> tuple:
     match = pattern.match(line)
     if match:
         username = match.group(1) or match.group(7)
-        message = (match.group(6) or match.group(11)).strip()
+        message = (match.group(6) or match.group(11))
         return username, message
     return None, line
 
@@ -45,12 +45,15 @@ def parse_generic_line(line: str, current_user: str = None):
         return user, message
     return current_user, line
 
-def update_stats(stats: Dict[str, Dict[str, int]], user: str, message: str):
+def update_stats(stats: Dict[str, Dict[str, int]], user: str, message: str, splitConv: str):
+    """Updates the metadata summary, and adds the user and message to the split conversation on a newline."""
     if user not in stats:
         stats[user] = {"messages": 1, "characters": len(message)}
     else:
         stats[user]["messages"] += 1
         stats[user]["characters"] += len(message)
+    splitConv += f"{user}: {message}\n"
+    return splitConv
 
 
 def metadata_analysis(
@@ -62,6 +65,7 @@ def metadata_analysis(
     stats = {}
     current_user = "unidentifiable"
     buffer = ""
+    splitConv = ""
 
     for line in messages:
         line = line.strip()
@@ -78,12 +82,13 @@ def metadata_analysis(
             user, message = "unidentifiable", line
 
         if user and message:
-            if buffer:
-                update_stats(stats, current_user, buffer)
+            if buffer != "":
+                splitConv = update_stats(stats, current_user, buffer, splitConv)
             current_user = user
             buffer = message
         elif user:
-            update_stats(stats, current_user, buffer)
+            if buffer != "":
+                splitConv = update_stats(stats, current_user, buffer, splitConv)
             current_user = user
             buffer = ""
         elif message:
@@ -91,8 +96,8 @@ def metadata_analysis(
                 buffer += "\n"
             buffer += message
 
-    if buffer:
-        update_stats(stats, current_user, buffer)
+    if not (buffer == "" and current_user == "unidentifiable"):
+        splitConv = update_stats(stats, current_user, buffer, splitConv)
     total_messages = sum(u["messages"] for u in stats.values())
     total_characters = sum(u["characters"] for u in stats.values())
 
@@ -103,16 +108,11 @@ def metadata_analysis(
 
     for user, data in stats.items():
         results[user] = {
-            "messages": data["messages"],
-            "percentage_messages": round((data["messages"] / total_messages * 100), 2)
-            if total_messages else 0,
-            "percentage_characters": round((data["characters"] / total_characters * 100), 2)
-            if total_characters else 0,
-            "average_message_length": round((data["characters"] / data["messages"]), 2)
-            if data["messages"] else 0
+            "number_messages": data["messages"],
+            "number_characters": data["characters"],
         }
 
-    return results
+    return results, splitConv
 
 
 def detect_platform(string: str):
@@ -135,9 +135,7 @@ if __name__ == "__main__":
 
     with open("data/sucide_discord.txt", "r") as f:
         string = f.read().replace(" AM", "").replace(" PM", "")
-    baobab = "Tortoised 1/7/25, 7:08 t'as besoin de faire tourner GTA 6 si tu prends une cg à 400 balles ça tournera"
-    print(f"detect_platform: {detect_platform(baobab)}")
     print(f"detect_platform: {detect_platform(string)}")
-    metadata = metadata_analysis(string, "text", detect_platform(string))
-
-    print(metadata)
+    metadata, conv = metadata_analysis(string, "text", detect_platform(string))
+    print(f"conversation: {conv}")
+    print(f"metadata: {metadata}")

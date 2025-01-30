@@ -94,34 +94,73 @@ def getImageMetadata(input_files, vision_model):
     
     contactName = findContactName(img_results)
     appended_results = addNames(img_results, contactName)
-    print(appended_results)
+    metadata, conversation = compileAnalysis(appended_results)
 
-    conversation = buildConversation(appended_results)
-    print(conversation)
-    metadata = local_analysis.metadata_analysis(conversation, "image", local_analysis.detect_platform(conversation))
+    print(f"final conversation: {conversation}")
+    print(f"final metadata: {metadata}")
+
     return metadata
+
+def compileAnalysis(appended_results):
+    """
+    Combines metadata from multiple images into single analysis
+    Returns (metadata_dict, conversation_string)
+    """
+    compiledMetadata = {
+        "total_messages": 0,
+        "total_characters": 0
+    }
+    conv = ""
+
+    # Process each image result
+    for img_result in appended_results:
+        text = "\n".join(box['text'] for box in img_result['boxes'])
+        img_metadata, splitConv = local_analysis.metadata_analysis(text, "image", local_analysis.detect_platform(text))
+        
+        # Add to conversation
+        conv += splitConv
+
+        # Add counts to totals
+        compiledMetadata["total_messages"] += img_metadata["total_messages"]
+        compiledMetadata["total_characters"] += img_metadata["total_characters"]
+
+        # Update per-user stats
+        for user, data in img_metadata.items():
+            if user not in ["total_messages", "total_characters"]:
+                if user not in compiledMetadata:
+                    compiledMetadata[user] = {
+                        "number_messages": data["number_messages"],
+                        "number_characters": data["number_characters"]
+                    }
+                else:
+                    compiledMetadata[user]["number_messages"] += data["number_messages"]
+                    compiledMetadata[user]["number_characters"] += data["number_characters"]
+
+    return compiledMetadata, conv
 
 def addNames(img_results, contactName):
     """appends a name at the start of a box's text depending on the posClass of the box and the oneSidedness of the image"""
     processed_results = []
     for img_result in img_results:
-        if img_result['oneSided'] is True:
-            processed_results.append({'boxes': img_result['boxes'], 'oneSided': True})
-            continue
         processed_boxes = []
-        for box in img_result['boxes']:
-            if box['conf'] > 0.5:
-                if box['cls'] == 0:
-                    box['text'] = f"{contactName}: {box['text']}\n"
-                elif box['cls'] == 1:
-                    box['text'] = f"You: {box['text']}\n"
-            else:
-                if box['posClass'] == 0:
-                    box['text'] = f"{contactName}: {box['text']}\n"
-                elif box['posClass'] == 1:
-                    box['text'] = f"You: {box['text']}\n"
-            processed_boxes.append(box)
-        processed_results.append({'boxes': processed_boxes, 'oneSided': False})
+        if img_result['oneSided'] is True:
+            for box in img_result['boxes']:
+                box['text'] +="\n"
+                processed_boxes.append(box)
+        else :
+            for box in img_result['boxes']:
+                if box['conf'] > 0.5:
+                    if box['cls'] == 0:
+                        box['text'] = f"{contactName}: {box['text']}\n"
+                    elif box['cls'] == 1:
+                        box['text'] = f"You: {box['text']}\n"
+                else:
+                    if box['posClass'] == 0:
+                        box['text'] = f"{contactName}: {box['text']}\n"
+                    elif box['posClass'] == 1:
+                        box['text'] = f"You: {box['text']}\n"
+                processed_boxes.append(box)
+        processed_results.append({'boxes': processed_boxes, 'oneSided': img_result['oneSided']})
     return processed_results
 
 def buildConversation(appended_results):
@@ -151,6 +190,5 @@ if __name__ == "__main__":
     # Load image
     model_path = "backend/vision/best.pt"
     vision_model = classifier.YOLO(model_path)
-    image_paths = ["IMG_1590.png"]
+    image_paths = ["IMG_1590.png", "backend/vision/dataset/raw/IMG_1400.PNG"]
     metadata = getImageMetadata(image_paths, vision_model)
-    print(metadata)
