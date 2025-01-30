@@ -2,6 +2,7 @@ from flask import Flask, request
 import utilities
 from flask_cors import CORS
 from ultralytics import YOLO
+from easyocr import Reader
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -9,6 +10,8 @@ CORS(app)  # Enable CORS for all routes
 # Load the vision model once when the API starts
 model_path = "backend/vision/best.pt"
 vision_model = YOLO(model_path)
+reader = Reader(['fr'])  # use french to handle accents
+
 
 # Basic route
 @app.route('/llm', methods=['POST'])
@@ -24,7 +27,7 @@ def get_llm_analysis():
         pass
     elif filetype == 'image':
         # process image file
-        json, response = utilities.getImageAnalysis(files, vision_model)
+        json, response = utilities.getImageAnalysis(files, vision_model, reader)
     elif filetype == 'audio':
         # process audio file
         raise NotImplementedError
@@ -43,7 +46,7 @@ def get_metadata_analysis():
     elif fileType == 'audio':
         raise NotImplementedError
     elif fileType == 'image':
-        response = utilities.getImageMetadata(files, vision_model)
+        response = utilities.getImageMetadata(files, vision_model, reader)
     else:
         raise Exception("Unsupported file type")
     return response

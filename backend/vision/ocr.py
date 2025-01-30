@@ -4,11 +4,10 @@ import time
 import numpy as np
 import re
 
-def extract_text_from_boxes(image, boxes):
+def extract_text_from_boxes(image, boxes, reader):
     """Modifies the boxes to include a 'content' field with the extracted text."""
     start_time = time.time()
     width, height = image.size
-    reader = easyocr.Reader(['fr'])  # use french to handle accents
     
     for box in boxes:
         x, y, w, h = box['xywhn']

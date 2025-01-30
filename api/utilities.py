@@ -32,9 +32,10 @@ def getTextMetadata(input_files):
     return metadata
 
 def fileToText(file):
-    # if the file is not a string
-    if type == 'file':
-        file = file.read().decode("utf-8")
+    # handle fileStorage object
+    if type(file) != str:
+        file_content = file.read()
+        return file_content.decode("utf-8")
     return file
 
 
@@ -55,7 +56,7 @@ def convert_input_images(input_files):
             converted_files.append(image)
         return converted_files
 
-def getImageAnalysis(input_files, vision_model):
+def getImageAnalysis(input_files, vision_model, reader):
     converted_files = convert_input_images(input_files)
     boxes_results = classifier.getBoxesFromImages(converted_files, vision_model)
     conversation = ""
@@ -70,13 +71,13 @@ def getImageAnalysis(input_files, vision_model):
         pil_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
         
         # Extract text from boxes
-        text_list = ocr.extract_text_from_boxes(pil_image, boxes)
+        text_list = ocr.extract_text_from_boxes(pil_image, boxes, reader)
     
     json, response = llm_analysis.promptToJSON(prompt=conversation, maxOutputTokens=2000)
     return json, response
 
 
-def getImageMetadata(input_files, vision_model):
+def getImageMetadata(input_files, vision_model, reader):
     converted_files = convert_input_images(input_files)
     img_results = classifier.getBoxesFromImages(converted_files, vision_model)
     conversation = ""
@@ -87,7 +88,7 @@ def getImageMetadata(input_files, vision_model):
         cv_image = converted_files[i]
         pil_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
         # extract text from boxes
-        img_results[i]['boxes'] = ocr.extract_text_from_boxes(pil_image, boxes)
+        img_results[i]['boxes'] = ocr.extract_text_from_boxes(pil_image, boxes, reader)
     
     contactName = findContactName(img_results)
     appended_results = addNames(img_results, contactName)
