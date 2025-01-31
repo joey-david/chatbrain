@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrainCircuit } from 'lucide-react';
 
 interface ConversationMetrics {
   stability_score_out_of_100: number;
@@ -87,7 +88,7 @@ export function LLMResults({ data }: { data: ResultsData }) {
     <div className="w-full max-w-7xl mx-auto space-y-8 mt-2 mb-6 transition duration-300 ease-in-out">
       {/* Conversation Metrics */}
       <div className='max-w-[832px] border-t-2 border-gray-500 mx-auto'/>
-      <h1 className="text-white text-3xl mt-8">Large Language Model Feedback</h1>
+      <h1 className="text-white text-3xl mt-8"><BrainCircuit className='inline mb-1 mr-3 w-8 h-8 animate-pulse'/>LLM Feedback</h1>
       <div className="flex justify-center w-full">
         <Card className="bg-black/35 w-full max-w-xl">
           <div className="p-6">

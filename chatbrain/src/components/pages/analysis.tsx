@@ -27,6 +27,7 @@ function Analysis() {
   const [analysisState, setAnalysisState] = useState<AnalysisState>('idle')
 
   // Progress tracking
+  const [error, setError] = useState<string | undefined>(undefined)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState("")
   
@@ -83,7 +84,9 @@ function Analysis() {
           body: formData
         })
 
-        if (!response.ok) throw new Error('Metadata fetch failed')
+        if (!response.ok) {
+          throw new Error(`Metadata fetch failed: ${response.statusText}`)
+        }
         
         const { metadata, conversation, img_results } = await response.json()
         const userList = Object.keys(metadata).filter(key => 
@@ -107,6 +110,7 @@ function Analysis() {
         }
       } catch (error) {
         console.error('Metadata error:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
         setAnalysisState('idle')
       }
     }
@@ -204,7 +208,13 @@ function Analysis() {
           <LLMResults data={llmResults} />
         </div>
       )}
-      {analysisState !== 'idle' && <LoadingBar progress={progress} status={status} />}
+      {analysisState !== 'idle' && analysisState !== 'complete' &&(
+      <LoadingBar 
+        progress={progress} 
+        status={status} 
+        error={error} 
+      />
+    )}
     </div>
   )
 }

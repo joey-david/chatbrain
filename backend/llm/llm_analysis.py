@@ -131,7 +131,8 @@ def api_call(model, maxOutputTokens, userPrompt, systemPrompt=None):
   # with open("chat_completion.pkl", "wb") as f:
   #   pickle.dump(response, f)
 
-  # extract the response object from the pickle file
+
+
   with open("chat_completion.pkl", "rb") as f:
     response = pickle.load(f)
 

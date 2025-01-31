@@ -1,5 +1,3 @@
-
-
 interface ScreenshotLabelProps {
     image: string;
     description: string;
@@ -11,9 +9,11 @@ function ScreenshotLabel({ image, description }: ScreenshotLabelProps) {
             <div className="space-y-4 text-lg">
                 <p>{description}</p>
             </div>
-            <img src={image}
+            <img 
+                src={image}
                 alt="Tutorial Image" 
-                className="w-full rounded-lg opacity-80 mt-2" />
+                className="w-full rounded-lg opacity-75 mt-2 shadow-lg shadow-black" 
+            />
         </div>
     )
 }

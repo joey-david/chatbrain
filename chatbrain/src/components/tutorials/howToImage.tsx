@@ -42,7 +42,7 @@ function ImageTutorial() {
                 <div className="w-1/2 space-x-4 text-lg flex flex-col items-center justify-center">
                     <p className="text-lg">3. Upload your screenshot(s) using the <a href="/use"><b>Upload File(s)</b></a> button.</p>                    <img src="src/assets/uploadButton.png"
                         alt="Tutorial Image" 
-                        className="w-full rounded-lg opacity-80 mt-2" />
+                        className="w-full rounded-lg opacity-80 mt-2 shadow-lg shadow-black" />
                 </div>
             </div>
         </div>

@@ -69,7 +69,7 @@ def metadata_analysis(
 
     for line in messages:
         line = line.strip()
-        if not line:
+        if not line or line == "\n":
             continue
 
         if detectedPlatform == "discord":

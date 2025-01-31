@@ -1,5 +1,6 @@
 import React from "react"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts"
+import { ChartColumnIcon } from "lucide-react"
 
 interface UserData {
   number_messages: number
@@ -75,7 +76,7 @@ export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
     <div>
       <hr className="border-t-2 border-gray-500 mt-10" />
       <div className="w-full justify-center space-y-8 mt-6 bg-card/0 transition duration-300 ease-in-out">
-        <h1 className="text-white text-3xl mt-8">Metadata Analysis</h1>
+        <h1 className="text-white text-3xl mt-8"><ChartColumnIcon className="inline mb-1 w-8 h-8 animate-pulse"/> Metrics Analysis</h1>
         {/* Global stats */}
         <div className="flex justify-center w-full mt-5">
           <div className="flex flex-col items-center justify-center px-12 py-4 rounded-lg bg-black/25 max-w-xl">
