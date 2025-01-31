@@ -27,7 +27,7 @@ const TabsContainer = ({ tabs }: TabsContainerProps) => {
             className={`rounded-none flex-1 px-4 py-3 text-lg font-light transition-colors 
               ${index === activeTab
                 ? 'bg-primary/0 text-white'
-                : 'text-white bg-primary/35 hover:bg-muted-foreground/20'}`}
+                : 'text-white bg-primary/50 hover:bg-muted-foreground/20'}`}
           >
             {tab.title}
           </button>

@@ -7,8 +7,8 @@ function Use() {
   return (
     <div className="bg-black/60 rounded-lg">
       <TabsContainer tabs={[
-        { title: <><Brain className="inline-block w-4 h-4 mr-4 mb-0.5" />Analyze</>, component: <Analysis /> },
-        { title: <><LucideCircleHelp className="inline-block w-4 h-4 mr-4 mb-0.5" />Usage guide</>, component: <HowTo /> }
+        { title: <><Brain className="inline-block w-4 h-4 mr-4 mb-0.5" />Analyze a conversation</>, component: <Analysis /> },
+        { title: <><LucideCircleHelp className="inline-block w-4 h-4 mr-4 mb-0.5" />How to analyze</>, component: <HowTo /> }
       ]} />
     </div>
   )

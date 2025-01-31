@@ -1,6 +1,9 @@
 import React from 'react';
 import { TextSelect, LucideFileStack, AudioLines } from 'lucide-react';
 import TabsContainer from '@/components/ui/tabsContainers';
+import TextTutorial from '@/components/tutorials/howToText';
+import ImageTutorial from '@/components/tutorials/howToImage';
+import AudioTutorial from '@/components/tutorials/howToAudio';
 
 interface Step {
   title: string | JSX.Element;
@@ -10,9 +13,9 @@ interface Step {
 
 const HowTo = () => {
   const tabs = [
-    { title: <><TextSelect className="inline-block w-4 h-4 mr-2" />Free text</>, component: <p>toimp</p> },
-    { title: <><LucideFileStack className="inline-block w-4 h-4 mr-2" />Logs/Screenshots</>, component: <p>toimp</p> },
-    { title: <><AudioLines className="inline-block w-4 h-4 mr-2" />Audio recordings</>, component: <p>toimp</p> }
+    { title: <><TextSelect className="inline-block w-4 h-4 mr-2" />Copy/Paste or Type</>, component: <TextTutorial /> },
+    { title: <><LucideFileStack className="inline-block w-4 h-4 mr-2" />Chat Logs or Screenshots</>, component: <ImageTutorial /> },
+    { title: <><AudioLines className="inline-block w-4 h-4 mr-2" />Audio recordings</>, component: <AudioTutorial /> }
   ];
 
   return <TabsContainer tabs={tabs}/>;
