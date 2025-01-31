@@ -46,6 +46,8 @@ function Analysis() {
     setAnalysisState('idle')
     setProgress(0)
     setStatus("")
+    setError(undefined)
+    setImageResults(null)
   }, [])
 
   // File handling

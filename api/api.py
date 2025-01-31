@@ -10,7 +10,7 @@ CORS(app)  # Enable CORS for all routes
 # Load the vision model once when the API starts
 model_path = "backend/vision/best.pt"
 vision_model = YOLO(model_path)
-reader = Reader(['fr'])  # use french to handle accents
+reader = Reader(['fr'], gpu=False)  # use french to handle accents
 
 
 # Basic route

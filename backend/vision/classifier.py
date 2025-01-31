@@ -1,7 +1,5 @@
 from ultralytics import YOLO
-import torch
 from PIL import Image
-import cv2
 # from backend.vision.ocr import extract_text_from_boxes
 
 def xywhn_to_xyxy(xywhn):
@@ -87,6 +85,9 @@ def getBoxesFromImages(images, visionModel):
 # Usage example
 if __name__ == "__main__":
     model = YOLO("backend/vision/best.pt")
+    device = next(model.parameters()).device
+    print(f"Inference is running on device: {device}")
+    
     image_paths = ["backend/vision/dataset/raw/why-did-alexa-stop-talking-to-me-she-seemed-nice-v0-xxaq456yw7ce1.webp"]
 
     # 3. Get processed data
@@ -105,5 +106,3 @@ if __name__ == "__main__":
         boxes = extract_text_from_boxes(image, r['boxes'])
         for b in boxes:
             print(b['text'], b['cls'])
-        
-

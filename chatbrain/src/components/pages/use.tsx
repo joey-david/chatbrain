@@ -3,6 +3,8 @@ import { Analysis } from '@/components/pages/analysis';
 import HowTo from '@/components/pages/howTo';
 import { Brain, LucideCircleHelp } from 'lucide-react'; // Replace with actual icon names
 
+
+
 function Use() {
   return (
     <div className="bg-black/60 rounded-lg">

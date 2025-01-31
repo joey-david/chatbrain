@@ -1,4 +1,3 @@
-import React from "react"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts"
 import { ChartColumnIcon } from "lucide-react"
 

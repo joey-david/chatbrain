@@ -1,8 +1,11 @@
 import { useState, ReactNode } from 'react'
 
 interface Tab {
-  title: string
+
+  title: ReactNode
+
   component: ReactNode
+
 }
 
 interface TabsContainerProps {

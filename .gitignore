@@ -1,13 +1,12 @@
 **/.venv/
-**/venv/
 **/.env
 **/*.pyc
 **/todo.txt
 **/node_modules/
-data/**
-backend/vision/dataset/*
+**/__pycache__/
+data/
 notes.md
 **/*.pkl
 data/*.txt
-**/*.pt
 runs/**
+chat_completion.pkl

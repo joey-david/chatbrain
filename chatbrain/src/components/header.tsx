@@ -1,11 +1,10 @@
 import { useState } from "react"
-import { Menu, User, Home, X } from "lucide-react"
+import { Menu, X } from "lucide-react"
 import ChatbrainLogo from "@/components/ui/ChatbrainLogo"
 import { Button } from "@/components/ui/button"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   return (
     <header className="flex items-center justify-between px-12 py-5 sticky top-0 z-20">

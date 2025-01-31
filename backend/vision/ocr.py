@@ -47,6 +47,8 @@ def treatLine(line, box_class):
 
 if __name__ == "__main__":
     # Load image
-    string = "Axolotl    Yesterday at  7.25 PM Je savais pas qu'elles étaient aussi bien vues"
-    print(treatLine(string, None))
-    print(treatLine(string, 2))
+    reader = easyocr.Reader(['fr'], gpu=False)
+    # prompt the user to upload an image
+    image = Image.open("chatbrain/src/assets/tutorialImage8.png")
+    boxes = [{'xywhn': [0.5, 0.5, 0.5, 0.5], 'conf': 0.99, 'cls': 0}]
+    boxes = extract_text_from_boxes(image, boxes, reader)
