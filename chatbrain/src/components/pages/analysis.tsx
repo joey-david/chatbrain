@@ -55,11 +55,49 @@ function Analysis() {
     try {
       validateFiles(files)
       const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name))
-      setSelectedFiles(sortedFiles)
-      setFileType(detectFileType(sortedFiles[0]))
-      resetState()
-      setAnalysisState('metadata')
-      setProgress(5)
+      
+      // Scale down images if needed
+      if (detectFileType(sortedFiles[0]) === 'img') {
+        Promise.all(sortedFiles.map(file => new Promise<File>((resolve) => {
+          const img = new Image()
+          img.onload = () => {
+            const canvas = document.createElement('canvas')
+            let width = img.width
+            let height = img.height
+            
+            if (height > 1000) {
+              width = Math.floor(width * (1000 / height))
+              height = 1000
+            }
+            
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
+            ctx?.drawImage(img, 0, 0, width, height)
+            
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(new File([blob], file.name, { type: file.type }))
+              } else {
+                resolve(file)
+              }
+            }, file.type)
+          }
+          img.src = URL.createObjectURL(file)
+        }))).then(scaledFiles => {
+          setSelectedFiles(scaledFiles)
+          setFileType('img')
+          resetState()
+          setAnalysisState('metadata')
+          setProgress(5)
+        })
+      } else {
+        setSelectedFiles(sortedFiles)
+        setFileType(detectFileType(sortedFiles[0]))
+        resetState()
+        setAnalysisState('metadata')
+        setProgress(5)
+      }
     } catch (error) {
       console.error("File validation error:", error)
     }
@@ -153,6 +191,10 @@ function Analysis() {
     switch (analysisState) {
       case 'metadata':
         setStatus("Analyzing metadata...")
+        // if the files are of type image, add a note about OCR
+        if (fileType === 'img') {
+          setStatus("GPU-less OCR: this should take a few secs/image.")
+        }
         break
       case 'llm':
         setStatus("Running LLM analysis...")
@@ -215,6 +257,7 @@ function Analysis() {
         progress={progress} 
         status={status} 
         error={error} 
+        fileCount={selectedFiles.length}
       />
     )}
     </div>

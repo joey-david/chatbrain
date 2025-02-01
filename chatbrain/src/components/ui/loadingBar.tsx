@@ -2,28 +2,13 @@ import { Loader2, Brain, AlertCircle } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 
 interface LoadingBarProps {
-  /** 
-   * A number indicating the phase:
-   * < 50 => metadata 
-   * >= 50 => llm
-   */
   progress: number
-  /**
-   * Plain text status message
-   */
   status: string
-  /**
-   * Error string if any
-   */
   error?: string
-  /**
-   * The number of files being analyzed,
-   * used to calculate metadata timing
-   */
   fileCount?: number
 }
 
-export function LoadingBar({ progress, status, error, fileCount = 1 }: LoadingBarProps) {
+export function LoadingBar({ progress, status, error, fileCount }: LoadingBarProps) {
   const [phase, setPhase] = useState<'metadata' | 'llm' | 'error'>('metadata')
   const [displayedProgress, setDisplayedProgress] = useState(0)
   const animationRef = useRef<number>()
@@ -35,39 +20,47 @@ export function LoadingBar({ progress, status, error, fileCount = 1 }: LoadingBa
       setPhase('error')
       return
     }
-    if (progress < 50) setPhase('metadata')
-    else setPhase('llm')
   }, [progress, error])
 
-  // Animate progress from 0 to 96% 
-  // metadata => n*6s, llm => 15s
+  useEffect(() => {
+    if (error) {
+      setPhase('error')
+      return
+    }
+    setPhase(progress >= 50 ? 'llm' : 'metadata')
+  }, [progress, error])
+
+  // Animate progress bar
   useEffect(() => {
     if (error) {
       setDisplayedProgress(0)
       return
     }
 
-    // Cancel any old animation
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current)
     }
     setDisplayedProgress(0)
     startTimeRef.current = undefined
 
-    // Compute duration
     const duration = phase === 'metadata'
-      ? fileCount * 6000
-      : 15000
+    ? 2000 + ((fileCount ?? 1) * 3500)  // 2s base + 3.5s per file
+    : 20000                     // 20s for LLM
 
-    const target = 96
+    const target = phase === 'metadata' ? 96 : 99
 
     const animate = (timestamp: number) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = timestamp
-      }
+      if (!startTimeRef.current) startTimeRef.current = timestamp
       const elapsed = timestamp - startTimeRef.current
-      const nextVal = Math.min((elapsed / duration) * 100, target)
-
+      
+      // Add nonlinear easing for better perception
+      const progressRatio = elapsed / duration
+      const easedProgress = progressRatio < 0.9 
+        ? progressRatio * 0.9
+        : 0.81 + (progressRatio - 0.9) * 2
+      
+      const nextVal = Math.min(easedProgress * 100, target)
+      
       setDisplayedProgress(Math.floor(nextVal))
       if (nextVal < target) {
         animationRef.current = requestAnimationFrame(animate)
@@ -78,11 +71,8 @@ export function LoadingBar({ progress, status, error, fileCount = 1 }: LoadingBa
       animationRef.current = requestAnimationFrame(animate)
     }
 
-    // Cleanup
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
+      animationRef.current && cancelAnimationFrame(animationRef.current)
     }
   }, [phase, fileCount, error])
 
@@ -97,28 +87,26 @@ export function LoadingBar({ progress, status, error, fileCount = 1 }: LoadingBa
   const activeIcon = phase === 'error' ? icons.error : phase === 'llm' ? icons.llm : icons.metadata
 
   // Display text
-  const displayText = error || status || "Processing..."
-
+  const displayText = error 
+    ? error 
+    : `${status || "Processing..."} ${phase === 'error' ? "--" : displayedProgress}%`
 
   return (
     <div className="flex items-center gap-3 p-4 max-w-xl mx-auto">
       {activeIcon}
-      <div className="wave-text-container">
+      <div className="wave-text-container font-mono text-lg w-full">
         {displayText.split('').map((char, i) => (
           <span
             key={i}
-            className={`wave-char text-xl${error ? 'text-red-500' : ''}`}
+            className={`wave-char inline-block ${error ? 'text-red-500' : ''}`}
             style={{
-              '--char-index': i,
-              whiteSpace: char === ' ' ? 'pre' : 'normal',
+              ['--char-index' as string]: i,
+              whiteSpace: 'pre-wrap',
             } as React.CSSProperties}
           >
-            {char}
+            {char === ' ' ? '\u00A0' : char}
           </span>
         ))}
-      </div>
-      <div className="text-xl font-mono">
-        {phase === 'error' ? "--" : displayedProgress}%
       </div>
     </div>
   )
