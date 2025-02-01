@@ -45,7 +45,7 @@ export function LoadingBar({ progress, status, error, fileCount }: LoadingBarPro
 
     const duration = phase === 'metadata'
     ? 2000 + ((fileCount ?? 1) * 3500)  // 2s base + 3.5s per file
-    : 20000                     // 20s for LLM
+    : 13000                     // 15s for LLM
 
     const target = phase === 'metadata' ? 96 : 99
 
