@@ -2,28 +2,46 @@ import React from 'react';
 import { BrainCircuit } from 'lucide-react';
 
 interface ConversationMetrics {
-  stability_score_out_of_100: number;
-  health_score_out_of_100: number;
-  intensity_score_out_of_100: number;
+  linguistic_synchrony_score: number;
+  trust_asymetry_score: number;
+  temporal_engagement_score: number;
 }
 
 interface UserMetrics {
-  [username: string]: {
-    assertiveness: number;
-    positiveness: number;
-    affection_towards_other: number;
-    romantic_attraction_towards_other: number;
-    rationality: number;
-    emotiveness: number;
-    IQ_estimate: number;
-  }
+  emotional_complexity: number;
+  social_perception: number;
+  cognitive_dissonance: number;
+  vulnerability_activation: number;
+  temporal_consistency: number;
+  trust: number;
+  conceptual_proficiency: number;
 }
+
 
 interface ResultsData {
   conversation_metrics: ConversationMetrics;
-  users: UserMetrics;
+  users: {
+    [username: string]: UserMetrics;
+  };
   insights: string[];
 }
+
+const explanations = {
+  conversation_metrics: {
+    linguistic_synchrony_score: "How users subconsciously mirror communication patterns (vocabulary, sentence length, emoji use)",
+    trust_asymetry_score: "Imbalanced reliance levels measured through vulnerability disclosures",
+    temporal_engagement_score: "Consistency of involvement across conversation timeline"
+  },
+  user_metrics: {
+    emotional_complexity: "Nuance range in emotional expression (1D anger->5D wistful nostalgia)",
+    social_perception: "Accuracy in interpreting others' unstated needs",
+    cognitive_dissonance: "Contradictions between stated values and behavioral patterns",
+    vulnerability_activation: "Frequency of self-disclosure triggers",
+    temporal_consistency: "Personality stability across conversation timeline",
+    trust: "Implicit faith in others measured through delegation frequency",
+    conceptual_proficiency: "Ability to grasp complex ideas and explain them clearly"
+  }
+};
 
 const GradientScoreBar = ({ value }: { value: number }) => {
   // Function to interpolate between two colors based on value
@@ -81,6 +99,28 @@ const Card = ({ children, className = "" }: { children: React.ReactNode; classNa
   </div>
 );
 
+const ExplanationCard = () => (
+  <Card className="bg-black/10 w-full max-w-3xl mx-auto text-left">
+    <div className="p-6">
+      <h2 className="text-xl mb-6 text-center">Explanation of Metrics</h2>
+      <div className="space-y-4">
+        <h3 className="text-lg mb-2 text-center">Conversation Metrics</h3>
+        {Object.entries(explanations.conversation_metrics).map(([key, explanation]) => (
+          <div key={key} className="text-sm text-gray-400">
+            <strong>{key.replace(/_/g, ' ')}:</strong> {explanation}
+          </div>
+        ))}
+        <h3 className="text-lg mt-4 mb-2 text-center">User Metrics</h3>
+        {Object.entries(explanations.user_metrics).map(([key, explanation]) => (
+          <div key={key} className="text-sm text-gray-400">
+            <strong>{key.replace(/_/g, ' ')}:</strong> {explanation}
+          </div>
+        ))}
+      </div>
+    </div>
+  </Card>
+);
+
 export function LLMResults({ data }: { data: ResultsData }) {
   const { conversation_metrics, users, insights } = data;
 
@@ -89,13 +129,17 @@ export function LLMResults({ data }: { data: ResultsData }) {
       {/* Conversation Metrics */}
       <div className='max-w-[832px] border-t-2 border-gray-500 mx-auto'/>
       <h1 className="text-white text-3xl mt-8"><BrainCircuit className='inline mb-1 mr-3 w-8 h-8 animate-pulse'/>LLM Feedback</h1>
+      
+      {/* Explanation Card */}
+      <ExplanationCard />
+
       <div className="flex justify-center w-full">
         <Card className="bg-black/35 w-full max-w-xl">
           <div className="p-6">
-            <h2 className="text-xl mb-6">Conversation Metrics</h2>
-            <ScoreRow label="Stability" value={conversation_metrics.stability_score_out_of_100} />
-            <ScoreRow label="Healthiness" value={conversation_metrics.health_score_out_of_100} />
-            <ScoreRow label="Intensity" value={conversation_metrics.intensity_score_out_of_100} />
+            <h2 className="text-xl mb-6">Conversation Dynamics</h2>
+            <ScoreRow label="Linguistic Synchrony" value={conversation_metrics.linguistic_synchrony_score} />
+            <ScoreRow label="Trust Asymmetry" value={conversation_metrics.trust_asymetry_score} />
+            <ScoreRow label="Temporal Engagement" value={conversation_metrics.temporal_engagement_score} />
           </div>
         </Card>
       </div>
@@ -107,13 +151,13 @@ export function LLMResults({ data }: { data: ResultsData }) {
           <div className="p-6">
         <h3 className="text-lg mb-6">{username}</h3>
         <div className="space-y-4">
-          <ScoreRow label="Assertiveness" value={metrics.assertiveness} />
-          <ScoreRow label="Positiveness" value={metrics.positiveness} />
-          <ScoreRow label="Affection" value={metrics.affection_towards_other} />
-          <ScoreRow label="Rom. Attraction" value={metrics.romantic_attraction_towards_other} />
-          <ScoreRow label="Rationality" value={metrics.rationality} />
-          <ScoreRow label="Emotiveness" value={metrics.emotiveness} />
-          <ScoreRow label="IQ Estimate" value={metrics.IQ_estimate} />
+          <ScoreRow label="Emotional Complexity" value={metrics.emotional_complexity} />
+          <ScoreRow label="Social Perception" value={metrics.social_perception} />
+          <ScoreRow label="Cognitive Dissonance" value={metrics.cognitive_dissonance} />
+          <ScoreRow label="Vulnerability Activation" value={metrics.vulnerability_activation} />
+          <ScoreRow label="Temporal Consistency" value={metrics.temporal_consistency} />
+          <ScoreRow label="Trust" value={metrics.trust} />
+          <ScoreRow label="Conceptual proficiency" value={metrics.conceptual_proficiency} />
         </div>
           </div>
         </Card>

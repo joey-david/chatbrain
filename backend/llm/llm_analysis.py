@@ -47,52 +47,52 @@ def getSystemPrompt(users):
     user_details = ", ".join([f"{user}" for user in users if user != "unidentifiable"])
 
   return f"""
-    Act as a hyperintelligent psychiatrist capable of infering a complete and radical understanding of people and their characteristics from a simple conversation.
-    Analyze the following chat between:
-    {user_details}
+    Act as a forensic conversation analyst with expertise in microexpression decoding and personality archetype detection. 
+    Perform a multi-layered analysis of this chat between {user_details} using these advanced techniques:
 
-    Your task is to provide a detailed analysis with the following metrics:
+    1. **Conversation-level matrix (100pt scales):**
+      - Linguistic Synchrony Score: How users subconsciously mirror communication patterns (vocabulary, sentence length, emoji use)
+      - Trust Asymmetry Score: Imbalanced reliance levels measured through vulnerability disclosures
+      - Temporal Engagement Score: Consistency of involvement across conversation timeline
 
-    1) **Conversation-level metrics:**
-    - **Stability Score (out of 100):** Reflects the emotional consistency and lack of dramatic fluctuations in the conversation.
-    - **Health Score (out of 100):** Indicates the overall positive or negative tone and supportiveness of the conversation.
-    - **Intensity Score (out of 100):** Measures the engagement level, such as message frequency and response speed.
-
-    2) **User-level metrics (for each user by name):**
-    - **Assertiveness (out of 100):** Reflects the user's confidence and decisiveness in their messages.
-    - **Positiveness (out of 100):** Indicates the overall positive or negative tone of the user's messages.
-    - **Affection Towards Other (out of 100):** Measures the user's emotional warmth and care towards others.
-    - **Romantic Attraction Towards Other (out of 100):** Reflects the user's romantic interest or attraction towards others.
-    - **Rationality (out of 100):** Indicates the user's logical and analytical thinking in their messages.
-    - **Emotiveness (out of 100):** Measures the user's emotional expressiveness and sensitivity.
-    - **IQ Estimate (out of 100):** assume baseline of 100, adjust based on the user's messages.
+    2) **User-level metrics (for each user by name, 100pt scale):**
+    - Emotional Complexity: Nuance range in emotional expression (1D anger->5D wistful nostalgia)
+    - Social Perception Score: Accuracy in interpreting others' unstated needs
+    - Cognitive Dissonance: Contradictions between stated values and behavioral patterns
+    - Vulnerability Activation: Frequency of self-disclosure triggers
+    - Temporal Consistency: Personality stability across conversation timeline
+    - Trust: Implicit faith in others measured through delegation frequency
+    - Conceptual proficiency: Ability to grasp complex ideas and explain them clearly
     
-    3) **Insights:**
-    - An array of at least three insights IN THE SAME LANGUAGE AS THE MESSAGES. Each around 100 words each,
-    offering advanced obscure inferences/guesses on the users, not summaries of the conversation.
-    Don't worry about possibly being wrong, just go far and precise with your guesses.
-    their full names, not their nicknames.
+    3. **Insights Protocol:**
+    Generate 3 "DNA Insights" following these rules:
+    - MUST combine at least 3 micro-patterns into one deduction
+    - MUST be relevant to the conversation context
+    - MUST be precise and targeted
+    - Present in original message language
+    - MUST be around 3 or 4 sentences long
 
     IMPOSED OUTPUT JSON FORMAT: 
 
     {{
     "conversation_metrics": {{
-    "stability_score_out_of_100": int,
-    "health_score_out_of_100": int,
-    "intensity_score_out_of_100": int
+      "linguistic_synchrony_score": int
+      "conflict_potential_score": int,
+      "trust_asymetry_score": int,
+      "temporal_engagement_score": int
     }},
     "users": {{
       // FOR EACH USER in {user_details}
       username: {{
-      "assertiveness": int,
-      "positiveness": int,
-      "affection_towards_other": int,
-      "romantic_attraction_towards_other": int,
-      "rationality": int,
-      "emotiveness": int,
-      "IQ_estimate": int
-    }},
-    "insights": ["Insight 1", "Insight 2", "Insight 3"]
+        "emotional_complexity": int,
+        "social_perception": int,
+        "cognitive_dissonance": int,
+        "vulnerability_activation": int,
+        "temporal_consistency": int,
+        "trust": int
+        "conceptual_proficiency": int
+      }},
+      "insights": ["Insight 1", "Insight 2", "Insight 3"]
     }}
   """
 
@@ -118,23 +118,23 @@ def promptToJSON(prompt, maxOutputTokens, users=[], model_name="deepseek-ai/Deep
 
 def api_call(model, maxOutputTokens, userPrompt, systemPrompt=None):
 
-  # response = client.chat.completions.create(
-  #   model=model,
-  #   messages=[
-  #     {"role": "system", "content": systemPrompt},
-  #     {"role": "user", "content": userPrompt}
-  #   ],
-  #   max_tokens=maxOutputTokens,
-  #   response_format={'type': 'json_object'}
-  # )
-  # # pickle the response object
-  # with open("chat_completion.pkl", "wb") as f:
-  #   pickle.dump(response, f)
+  response = client.chat.completions.create(
+    model=model,
+    messages=[
+      {"role": "system", "content": systemPrompt},
+      {"role": "user", "content": userPrompt}
+    ],
+    max_tokens=maxOutputTokens,
+    response_format={'type': 'json_object'}
+  )
+  # pickle the response object
+  with open("chat_completion.pkl", "wb") as f:
+    pickle.dump(response, f)
 
 
 
-  with open("chat_completion.pkl", "rb") as f:
-    response = pickle.load(f)
+  # with open("chat_completion.pkl", "rb") as f:
+  #   response = pickle.load(f)
 
   return (response)
 

@@ -73,6 +73,22 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+
+.wave-text-container {
+  /* Enable text wrapping */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wave-char {
+  /* Prevent space collapse between characters */
+  position: relative;
+  /* Allow line breaks between characters if needed */
+  display: inline-block;
+  min-width: 0.2ch;
+}
+
+
 @media (prefers-color-scheme: light) {
   :root {
     color: black;
