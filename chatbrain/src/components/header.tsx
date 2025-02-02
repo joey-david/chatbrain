@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Menu, X , FileText} from "lucide-react";
 import ChatbrainLogo from "@/components/ui/ChatbrainLogo";
 import { Button } from "@/components/ui/button";
+import Resume from "@/../public/Resume_Feb_2025.pdf";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -118,7 +119,7 @@ export function Header() {
                   </li>
                     <li>
                     <a
-                      href="/public/Resume_Feb_2025.pdf"
+                      href={ Resume }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
