@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import ChatbrainLogo from "@/components/ui/ChatbrainLogo"
@@ -6,30 +7,47 @@ import { Button } from "@/components/ui/button"
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isMenuOpen])
+
   return (
-    <header className="flex items-center justify-between px-12 py-5 sticky top-0 z-20">
-      <a href="/" className="flex items-center justify-center gap-2 text-2xl font-light
-      text-white">
-        <ChatbrainLogo className="h-8 relative top-[-2px]" /> chatbrain
+    <header className="flex items-center justify-between px-2 md:px-12 pb-2 py-6 md:py-5 sticky top-0 z-20">
+      <a href="/" className="flex items-center justify-center gap-2 text-2xl font-light text-white">
+        <ChatbrainLogo className="h-7 md:h-8 relative top-[-2px] pl-4 md:pl-0" />chatbrain
       </a>
       <div className="flex items-center gap-3">
         <a href="/">
           <Button
             variant="ghost"
-            className="inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background
-          transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-          focus-visible:ring-offset-2 bg-secondary/85
-          text-secondary-foreground hover:bg-secondary/80 px-4 text-base"
-            onClick={() => {
-          // handle user connection / creation page
-            }}
+            className="hidden md:flex items-center justify-center whitespace-nowrap font-medium ring-offset-background
+              transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+              focus-visible:ring-offset-2 bg-secondary/85
+              text-secondary-foreground hover:bg-secondary/80 px-4 text-sm md:text-base"
           > Home
           </Button>
         </a>
         <Button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="bg-black/0 md:bg-primary/80"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-7 w-7 md:h-5 md:w-5" />
         </Button>
       </div>
 
@@ -40,8 +58,9 @@ export function Header() {
             onClick={() => setIsMenuOpen(false)}
           />
           <aside
+            ref={menuRef}
             className={`fixed top-0 right-0 w-64 h-screen shadow-lg p-6 transform transition-transform duration-300 ease-in-out
-             bg-black/30 backdrop-blur-sm z-10${
+             bg-black/60 md:bg-black/40 backdrop-blur-sm z-10 ${
               isMenuOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
           >

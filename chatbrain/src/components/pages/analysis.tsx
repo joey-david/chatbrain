@@ -119,7 +119,7 @@ function Analysis() {
         const formData = new FormData()
         selectedFiles.forEach(file => formData.append('files', file))
         
-        const response = await fetch('/api/metadata', {
+        const response = await fetch(process.env.NODE_ENV === 'development' ? 'http://localhost:5000/metadata' : '/api/metadata', {
           method: 'POST',
           body: formData
         })
@@ -162,9 +162,18 @@ function Analysis() {
   useEffect(() => {
     if (!conversation || !users.length || llmFetchedRef.current || analysisState !== 'llm') return
 
+    const wordCount = conversation.split(/\s+/).length
+    if (wordCount > 1000) {
+      console.warn('Conversation too long for LLM analysis')
+      alert('Conversation too long for LLM analysis. Please use a shorter conversation.')
+      setAnalysisState('complete')
+      setProgress(100)
+      return
+    }
+
     async function fetchLLM() {
       try {
-        const response = await fetch('/api/llm', {
+        const response = await fetch(process.env.NODE_ENV === 'development' ? 'http://localhost:5000/llm' : '/api/llm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ conversation, users })
@@ -193,7 +202,7 @@ function Analysis() {
         setStatus("Analyzing metadata...")
         // if the files are of type image, add a note about OCR
         if (fileType === 'img') {
-          setStatus("GPU-less OCR: this should take a few secs/image.")
+            setStatus(window.innerWidth < 768 ? "OCR in progress..." : "GPU-less OCR: this should take a few secs/image.")
         }
         break
       case 'llm':
@@ -208,7 +217,7 @@ function Analysis() {
   }, [analysisState])
 
   return (
-    <div className="border-none text-center rounded-xl p-5 items-center flex flex-col transition-all duration-300 ease-in-out overflow-hidden">
+    <div className="border-none text-center rounded-none md:rounded-xl p-2 md:p-5 items-center flex flex-col transition-all duration-300 ease-in-out overflow-hidden">
       <input
         type="file"
         ref={fileInputRef}

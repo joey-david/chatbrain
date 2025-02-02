@@ -37,10 +37,9 @@ export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
 
   // Define the metrics (categories) to plot
   const categories = [
-    { key: "messages", label: "number of messages sent" },
-    { key: "percentage_messages", label: "total messages sent %" },
-    { key: "percentage_characters", label: "total chars. typed %" },
-    { key: "average_message_length", label: "avg chars./message" }
+    { key: "percentage_messages", label: window.innerWidth < 768 ? "msgs %" : "total messages sent %" },
+    { key: "percentage_characters", label: window.innerWidth < 768 ? "chars %" : "total chars. typed %" },
+    { key: "average_message_length", label: window.innerWidth < 768 ? "avg chars/msg" : "avg chars./message" }
   ]
 
   // Pivot the data so that each category is on the x-axis, with each user as a series
@@ -72,7 +71,7 @@ export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
   const colorPalette = ["rgb(194, 188, 255)", "rgb(107, 203, 255)", "rgb(150, 187, 139)", "rgb(95, 139, 126)", "rgb(90, 44, 44)"]
 
   return (
-    <div>
+    <div className="w-full">
       <hr className="border-t-2 border-gray-500 mt-10" />
       <div className="w-full justify-center space-y-8 mt-6 bg-card/0 transition duration-300 ease-in-out">
         <h1 className="text-white text-3xl mt-8"><ChartColumnIcon className="inline mb-1 w-8 h-8 animate-pulse"/> Metrics Analysis</h1>
@@ -85,25 +84,25 @@ export function MetadataResults({ data }: { data: MetadataAnalysisResults }) {
           </div>
         </div>
         <div className="flex justify-center w-full">
-          <div className="w-[52rem] h-96 rounded-lg p-4">
-            <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full md:w-[52rem] h-96 rounded-lg pr-8 md:p-4">
+              <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} width={1152}>
-                <CartesianGrid strokeDasharray="3 3" stroke="white" />
-                <XAxis dataKey="category" stroke="white" />
-                <YAxis stroke="white" />
-                <Tooltip />
-                <Legend />
-                {userKeys.map((user, index) => (
-                  <Bar
-                    key={user}
-                    dataKey={user}
-                    fill={colorPalette[index % colorPalette.length]}
-                    name={user}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+              <CartesianGrid strokeDasharray="3 3" stroke="white" />
+              <XAxis dataKey="category" stroke="white" />
+              <YAxis stroke="white" />
+              <Tooltip />
+              <Legend layout="horizontal" align="center" />
+              {userKeys.map((user, index) => (
+                <Bar
+                  key={user}
+                  dataKey={user}
+                  fill={colorPalette[index % colorPalette.length]}
+                  name={user}
+                />
+              ))}
+            </BarChart>
+              </ResponsiveContainer>
+            </div>
         </div>
       </div>
     </div>

@@ -100,7 +100,7 @@ const Card = ({ children, className = "" }: { children: React.ReactNode; classNa
 );
 
 const ExplanationCard = () => (
-  <Card className="bg-black/10 w-full max-w-3xl mx-auto text-left">
+  <Card className="bg-black/10 w-full md:max-w-3xl mx-auto text-left">
     <div className="p-6">
       <h2 className="text-xl mb-6 text-center">Explanation of Metrics</h2>
       <div className="space-y-4">
@@ -125,7 +125,7 @@ export function LLMResults({ data }: { data: ResultsData }) {
   const { conversation_metrics, users, insights } = data;
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-8 mt-2 mb-6 transition duration-300 ease-in-out">
+    <div className="w-full max-w-full md:max-w-7xl mx-auto space-y-8 mt-2 mb-6 transition duration-300 ease-in-out">
       {/* Conversation Metrics */}
       <div className='max-w-[832px] border-t-2 border-gray-500 mx-auto'/>
       <h1 className="text-white text-3xl mt-8"><BrainCircuit className='inline mb-1 mr-3 w-8 h-8 animate-pulse'/>LLM Feedback</h1>

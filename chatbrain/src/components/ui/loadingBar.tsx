@@ -93,7 +93,9 @@ export function LoadingBar({ progress, status, error, fileCount }: LoadingBarPro
 
   return (
     <div className="flex items-center gap-3 p-4 max-w-xl mx-auto">
-      {activeIcon}
+      <div className="animate-pulse mb-1">
+        {activeIcon}
+      </div>
       <div className="wave-text-container font-mono text-lg w-full">
         {displayText.split('').map((char, i) => (
           <span

@@ -1,11 +1,8 @@
 import { useState, ReactNode } from 'react'
 
 interface Tab {
-
   title: ReactNode
-
   component: ReactNode
-
 }
 
 interface TabsContainerProps {
@@ -20,26 +17,26 @@ const TabsContainer = ({ tabs }: TabsContainerProps) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto rounded-lg shadow overflow-hidden">
+    <div className="max-w-6xl mx-auto md:rounded-lg shadow overflow-hidden">
       {/* Tab Headers */}
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {tabs.map((tab, index) => (
-          <button
+            <button
             key={index}
             onClick={() => handleTabClick(index)}
-            className={`rounded-none flex-1 px-4 py-3 text-lg font-light transition-colors 
+            className={`rounded-none flex-1 md:px-4 md:py-3 text-md md:text-lg font-light transition-colors 
               ${index === activeTab
-                ? 'bg-primary/0 text-white'
-                : 'text-white bg-primary/50 hover:bg-muted-foreground/20'}`}
-          >
+              ? 'bg-white/20 text-white'
+              : 'text-gray-300 bg-primary/50 hover:bg-muted-foreground/20'}`}
+            >
             {tab.title}
-          </button>
+            </button>
         ))}
       </div>
 
       {/* Single active tab content (no sliding) */}
       <div className="relative overflow-hidden" style={{ minHeight: 200 }}>
-        <div className="w-full p-6">
+        <div className="w-full py-4 md:p-6">
           {tabs[activeTab].component}
         </div>
       </div>

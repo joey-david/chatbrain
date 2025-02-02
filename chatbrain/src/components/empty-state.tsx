@@ -29,7 +29,7 @@ export function EmptyState({
   return (
     <div className={cn(
       "bg-muted/0 text-center",
-      "border-2 border-dashed border-gray-500 rounded-xl p-14 w-[600px]",
+      "md:border-2 border-dashed border-gray-500 rounded-xl p-6 md:p-14 w-full md:w-[600px]",
       "group transition duration-300 ease-in-out hover:duration-200",
       className
     )}>
@@ -62,32 +62,34 @@ export function EmptyState({
       </div>
       <h2 className="text-gray text-lg text font-medium mt-10">{title}</h2>
       <p className="text-md mt-1 whitespace-pre-line text-gray-400">{description}</p>
-      <div className="flex justify-center mt-4">
+      <div className="flex flex-col md:flex-row justify-center mt-4">
         {action && (
           <Button
-            onClick={action.onClick}
-            variant="outline"
-            className={cn(
-              "mt-4 mr-2 gap-2",
-              "shadow-lg active:shadow-none text-black"
-            )}
+        onClick={action.onClick}
+        variant="outline"
+        className={cn(
+          "mt-4 gap-2",
+          "shadow-lg active:shadow-none text-black",
+          "w-full sm:w-auto sm:mr-2"
+        )}
           >
-            <>
-              <Paperclip className="w-5 h-5" /> {action.label}
-            </>
+        <>
+          <Paperclip className="w-5 h-5" /> {action.label}
+        </>
           </Button>
         )}
         {secondaryAction && (
           <Button
-            onClick={secondaryAction.onClick}
-            className={cn(
-              "mt-4 mr-2 gap-2",
-              "shadow-lg active:shadow-none text-white bg-primary outline-primary"
-            )}
+        onClick={secondaryAction.onClick}
+        className={cn(
+          "mt-4 gap-2",
+          "shadow-lg active:shadow-none text-white bg-primary outline-primary",
+          "w-full sm:w-auto"
+        )}
           >
-            <>
-              <TextSelect className="w-5 h-5" /> {secondaryAction.label}
-            </>
+        <>
+          <TextSelect className="w-5 h-5" /> {secondaryAction.label}
+        </>
           </Button>
         )}
       </div>

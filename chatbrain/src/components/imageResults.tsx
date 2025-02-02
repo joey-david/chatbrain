@@ -22,7 +22,7 @@ export function ImageResults({ results, originalFiles }: ImageResultsProps) {
     return (
         <div>
             <h1 className="text-white text-3xl mt-8">Message Detection</h1>
-            <div className="max-w-6xl grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 place-items-center mt-5">
+            <div className="max-w-full md:max-w-6xl grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 place-items-center mt-5">
                 {originalFiles.map((file, index) => (
                     <ImageWithBoxes 
                         key={file.name} 
