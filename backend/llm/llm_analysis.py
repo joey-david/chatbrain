@@ -105,7 +105,7 @@ def promptToJSON(prompt, maxOutputTokens, users=[], model_name="deepseek-ai/Deep
   print(f"Token count: {tokenCount}")
   if price > 0.002:
     print(f"Warning: This API call will cost ${price:.4f} USD.")
-    raise ValueError("API call price exceeds $0.002 USD.")
+    return None, None
     
   # make the API call
   response = api_call("deepseek-chat", maxOutputTokens, prompt, systemPrompt)

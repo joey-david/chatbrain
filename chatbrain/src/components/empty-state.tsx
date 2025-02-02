@@ -61,7 +61,7 @@ export function EmptyState({
         )}
       </div>
       <h2 className="text-gray text-lg text font-medium mt-10">{title}</h2>
-      <p className="text-md mt-1 whitespace-pre-line text-gray-400">{description}</p>
+      <p className="text-md w-full mt-1 whitespace-pre-line text-gray-400">{description}</p>
       <div className="flex flex-col md:flex-row justify-center mt-4">
         {action && (
           <Button

@@ -17,7 +17,7 @@ const TabsContainer = ({ tabs }: TabsContainerProps) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto md:rounded-lg shadow overflow-hidden">
+    <div className="w-100vw max-w-6xl mx-auto md:rounded-lg shadow overflow-hidden">
       {/* Tab Headers */}
       <div className="flex flex-col md:flex-row">
         {tabs.map((tab, index) => (

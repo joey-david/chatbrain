@@ -1,5 +1,8 @@
 from flask import Flask, request
-import utilities
+if __name__ == '__main__':
+    import utilities
+else:
+    from . import utilities
 from flask_cors import CORS
 from ultralytics import YOLO
 from easyocr import Reader
@@ -23,6 +26,10 @@ def get_llm_analysis():
     conversation = data['conversation']
     users = data['users']
     json, response = utilities.getConversationAnalysis(conversation, users)
+    if response.choices[0].message.refusal != None:
+        print("Model refused to answer for the following reason:")
+        print(response.choices[0].message.refusal)
+        return None
     return json
 
 @app.route('/metadata', methods=['POST'])

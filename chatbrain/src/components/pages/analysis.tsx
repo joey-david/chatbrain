@@ -173,22 +173,27 @@ function Analysis() {
 
     async function fetchLLM() {
       try {
-        const response = await fetch(process.env.NODE_ENV === 'development' ? 'http://localhost:5000/llm' : '/api/llm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversation, users })
-        })
+      const response = await fetch(process.env.NODE_ENV === 'development' ? 'http://localhost:5000/llm' : '/api/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation, users })
+      })
 
-        if (!response.ok) throw new Error('LLM fetch failed')
-        
-        const results = await response.json()
-        setLlmResults(results)
-        llmFetchedRef.current = true
-        setAnalysisState('complete')
-        setProgress(100)
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert("The LLM analysis failed. This can happen when the api is overloaded.\n Please try again later!")
+        throw new Error(errorData.error || 'LLM fetch failed')
+      }
+      
+      const results = await response.json()
+      setLlmResults(results)
+      llmFetchedRef.current = true
+      setAnalysisState('complete')
+      setProgress(100)
       } catch (error) {
-        console.error('LLM error:', error)
-        setAnalysisState('metadata')
+      console.error('LLM error:', error)
+      setError(error instanceof Error ? error.message : 'Unknown error')
+      setAnalysisState('idle')
       }
     }
 

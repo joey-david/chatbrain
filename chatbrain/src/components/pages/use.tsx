@@ -7,7 +7,7 @@ import { Brain, LucideCircleHelp } from 'lucide-react'; // Replace with actual i
 
 function Use() {
   return (
-    <div className="bg-black/60 md:rounded-lg max-w-full">
+    <div className="bg-black/60 md:rounded-lg max-w-full w-full md:w-auto">
       <TabsContainer tabs={[
         { title: <><Brain className="inline-block w-4 h-4 mr-4 mb-0.5" />Analyze a conversation</>, component: <Analysis /> },
         { title: <><LucideCircleHelp className="inline-block w-4 h-4 mr-4 mb-0.5" />How to analyze</>, component: <HowTo /> }
