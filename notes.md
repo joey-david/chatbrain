@@ -4,6 +4,36 @@ Notes I've taken on deploying a frontend and backend (api) onto a VPS.
 
 ---
 
+## **0. A Typical Update Workflow**
+
+To update chatbrain, I follow these steps:
+
+1. **Navigate to the project directory**:
+   ```bash
+   cd /var/www/chatbrain/
+   ```
+
+2. **Pull the latest changes from the repository**:
+   ```bash
+   git pull
+   ```
+
+3. **Build the frontend application**:
+   ```bash
+   cd chatbrain/
+   npm run build
+   ```
+
+4. **Restart Nginx to apply any configuration changes**:
+   ```bash
+   systemctl restart nginx
+   ```
+
+5. **Restart the backend service**:
+   ```bash
+   sudo systemctl restart chatbrain.service
+   ```
+
 ## **1. Understanding the Infrastructure**
 
 ### **1.1 What is a VPS?**
