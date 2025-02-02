@@ -1,3 +1,6 @@
+import copypasteGif from '@/assets/copypaste.gif';
+import typeGif from '@/assets/type.gif';
+
 function TextTutorial() {
   return (
     <div className="p-4 max-w-5xl">
@@ -13,13 +16,13 @@ function TextTutorial() {
                      click the <br/>"<b><i>Type/paste text</i></b>" button.<br/>
                     5. Press <b><code>ctrl+v</code></b> (on smartphone, long-press then hit paste), then click <b><i>Submit</i></b>.</p>
                 </div>
-                <img src="src/assets/copypaste.gif"
+                <img src={copypasteGif}
                     alt="Tutorial GIF" 
                     className="w-3/5 h-auto rounded-lg opacity-75 shadow-xl shadow-black" />
             </div>
             <h2 className="text-2xl font-medium my-8">2. Transcribing manually</h2>
             <div className="flex flex-row items-center justify-center space-x-6">
-                <img src="src/assets/type.gif"
+                <img src={typeGif}
                     alt="Tutorial GIF" 
                     className="w-3/5 h-auto rounded-lg opacity-75 shadow-xl shadow-black" />
                 <div className="w-2/5 space-y-4 text-lg">

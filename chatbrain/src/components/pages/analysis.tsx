@@ -119,7 +119,7 @@ function Analysis() {
         const formData = new FormData()
         selectedFiles.forEach(file => formData.append('files', file))
         
-        const response = await fetch('http://localhost:5000/metadata', {
+        const response = await fetch('/api/metadata', {
           method: 'POST',
           body: formData
         })
@@ -164,7 +164,7 @@ function Analysis() {
 
     async function fetchLLM() {
       try {
-        const response = await fetch('http://localhost:5000/llm', {
+        const response = await fetch('/api/llm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ conversation, users })

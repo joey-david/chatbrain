@@ -1,5 +1,5 @@
 from flask import Flask, request
-import utilities
+from . import utilities
 from flask_cors import CORS
 from ultralytics import YOLO
 from easyocr import Reader
