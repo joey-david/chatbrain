@@ -66,11 +66,11 @@ def getSystemPrompt(users):
     
     3. **Insights Protocol:**
     Generate 3 "DNA Insights" following these rules:
-    - MUST combine at least 3 micro-patterns into one deduction
+    - MUST be an advanced inference and deduction
     - MUST be relevant to the conversation context
     - MUST be precise and targeted
     - Present in original message language
-    - MUST be around 3 or 4 sentences long
+    - MUST be around 4 to 5 sentences long
 
     IMPOSED OUTPUT JSON FORMAT: 
 

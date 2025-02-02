@@ -5,7 +5,6 @@
 **/node_modules/
 **/__pycache__/
 data/
-notes.md
 **/*.pkl
 data/*.txt
 runs/**
