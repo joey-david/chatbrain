@@ -123,6 +123,8 @@ const ExplanationCard = () => (
 
 export function LLMResults({ data }: { data: ResultsData }) {
   const { conversation_metrics, users, insights } = data;
+  const gridColsClass =
+    Object.keys(users).length >= 3 ? 'lg:grid-cols-3' : Object.keys(users).length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8 mt-2 mb-6 transition duration-300 ease-in-out">
@@ -145,7 +147,7 @@ export function LLMResults({ data }: { data: ResultsData }) {
       </div>
 
       {/* User Metrics */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(Object.keys(users).length, 3)} md:divide-x-2 md:divide-gray-500/50 gap-6 bg-black/35 border-border text-center rounded-lg`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} md:divide-x-2 md:divide-gray-500/50 gap-6 bg-black/35 border-border text-center rounded-lg`}>
       {Object.entries(users).map(([username, metrics]) => (
         <Card key={username} className="bg-black/0 rounded-none">
           <div className="p-6">

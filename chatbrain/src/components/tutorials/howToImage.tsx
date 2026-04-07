@@ -6,9 +6,8 @@ function ImageTutorial() {
         <div>
             <h2 className="text-2xl font-medium mb-2">1. Analyzing exported conversation logs</h2>
             <div>
-                <h3 className="text-lg text-gray-400 font-semibold mb-2">DISCLAIMER: Chat logs tend to be very large,
-                    and chatbrain will not perform an LLM analysis on conversations containing roughly over 100 texts,
-                    in order not to overload the app. Metadata graphs and metrics will still be available.
+                <h3 className="text-lg text-gray-400 font-semibold mb-2">
+                    Large exports may take longer to process, but the app is optimized for keeping the pipeline lightweight.
                 </h3>
                 <h3 className="text-xl font-semibold mb-2 mt-10">I. Obtaining the log(s)</h3>
                 <p className="mb-8">
@@ -40,7 +39,8 @@ function ImageTutorial() {
                 <ScreenshotLabel image="src/assets/tutorialImage7.png" description="1. Take a single screenshot or..." />
                 <ScreenshotLabel image="src/assets/tutorialImage8.png" description="2. Up to 10, if you need to." />
                 <div className="w-1/2 space-x-4 text-lg flex flex-col items-center justify-center">
-                    <p className="text-lg">3. Upload your screenshot(s) using the <a href="/use"><b>Upload File(s)</b></a> button.</p>                    <img src="src/assets/uploadButton.png"
+                    <p className="text-lg">3. Upload your screenshot(s) using the <a href="/use"><b>Upload File(s)</b></a> button.</p>
+                    <img src="src/assets/uploadButton.png"
                         alt="Tutorial Image" 
                         className="w-full rounded-lg opacity-80 mt-2 shadow-lg shadow-black" />
                 </div>

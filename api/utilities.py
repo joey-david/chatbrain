@@ -1,24 +1,83 @@
-import sys
+from __future__ import annotations
+
 import os
+import re
+import sys
+from functools import lru_cache
+from pathlib import Path
+from typing import Iterable, List, Sequence
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../backend'))
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../backend/llm'))
-
-from backend import chat_shrinker
-from backend import local_analysis
-from backend.llm import llm_analysis
-from backend.vision import classifier
-from backend.vision import ocr
-import numpy as np
 import cv2
+import numpy as np
 from PIL import Image
 
-def getConversationAnalysis(conversation, users):
-    json, response = llm_analysis.promptToJSON(conversation, 2000, users)
-    return json, response
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../backend"))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../backend/llm"))
 
-# Text analysis
+from backend import local_analysis
+from backend.llm import llm_analysis
+from backend.vision import classifier, ocr
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MODEL_PATH = REPO_ROOT / "backend" / "vision" / "best.pt"
+DEFAULT_OCR_LANGS = tuple(
+    language.strip()
+    for language in os.getenv("CHATBRAIN_OCR_LANGS", "fr,en").split(",")
+    if language.strip()
+)
+UI_NOISE_MARKERS = {
+    "add to list",
+    "airdrop",
+    "audio",
+    "block ",
+    "contact info",
+    "copy",
+    "downloads",
+    "edit",
+    "encryption",
+    "media, links and docs",
+    "notifications",
+    "recents",
+    "report ",
+    "search",
+    "starred messages",
+    "wallpaper",
+    "whatsapp",
+}
+HEADER_NOISE_MARKERS = {
+    "edit",
+    "contact",
+    "info",
+    "lebara",
+    "whatsapp",
+}
+
+
+@lru_cache(maxsize=1)
+def get_vision_model():
+    from ultralytics import YOLO
+
+    model_path = Path(os.getenv("CHATBRAIN_MODEL_PATH", str(DEFAULT_MODEL_PATH)))
+    return YOLO(str(model_path))
+
+
+@lru_cache(maxsize=1)
+def get_ocr_reader():
+    from easyocr import Reader
+
+    return Reader(
+        list(DEFAULT_OCR_LANGS),
+        gpu=os.getenv("CHATBRAIN_OCR_GPU", "false").lower() == "true",
+        verbose=False,
+        quantize=True,
+    )
+
+
+def getConversationAnalysis(conversation, users, metadata=None):
+    return llm_analysis.promptToJSON(conversation, users=users, metadata=metadata)
+
 
 def getTextMetadata(input_files):
     string = fileToText(input_files[-1])
@@ -26,142 +85,176 @@ def getTextMetadata(input_files):
     metadata, conversation = local_analysis.metadata_analysis(string, "text", platform)
     return metadata, conversation
 
+
 def fileToText(file):
-    # handle fileStorage object
-    if type(file) != str:
-        file_content = file.read()
-        return file_content.decode("utf-8")
-    return file
+    if isinstance(file, str):
+        return file
+    file_content = file.read()
+    return file_content.decode("utf-8", errors="replace")
 
 
-# Image analysis
-
-def convert_input_images(input_files):
-        converted_files = []
-        # if input_files is a list of filepaths instead of file objects
-        if type(input_files[0]) == str:
-            for file in input_files:
-                image = cv2.imread(file)
-                converted_files.append(image)
-            return converted_files
-        for file in input_files:
-            file_content = file.read()
-            np_array = np.frombuffer(file_content, np.uint8)
-            image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+def convert_input_images(input_files: Sequence):
+    converted_files = []
+    if isinstance(input_files[0], str):
+        for file_path in input_files:
+            image = cv2.imread(file_path)
+            if image is None:
+                raise ValueError(f"Unable to read image file: {file_path}")
             converted_files.append(image)
         return converted_files
 
+    for file in input_files:
+        file_content = file.read()
+        np_array = np.frombuffer(file_content, np.uint8)
+        image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError(f"Unable to decode image payload: {getattr(file, 'filename', 'unknown')}")
+        converted_files.append(image)
+    return converted_files
 
-def getImageMetadata(input_files, vision_model, reader):
+
+def getImageMetadata(input_files, vision_model=None, reader=None):
     converted_files = convert_input_images(input_files)
-    img_results = classifier.getBoxesFromImages(converted_files, vision_model)
-    conversation = ""
+    vision_model = vision_model or get_vision_model()
+    reader = reader or get_ocr_reader()
 
-    for i, img_result in enumerate(img_results):
-        boxes = img_result['boxes']
-        # convert image to format readable by OCR
-        cv_image = converted_files[i]
+    img_results = classifier.getBoxesFromImages(
+        converted_files,
+        vision_model,
+        conf=float(os.getenv("CHATBRAIN_VISION_CONF", "0.18")),
+        imgsz=int(os.getenv("CHATBRAIN_VISION_IMGSZ", "960")),
+    )
+
+    for index, img_result in enumerate(img_results):
+        cv_image = converted_files[index]
         pil_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-        # extract text from boxes
-        img_results[i]['boxes'] = ocr.extract_text_from_boxes(pil_image, boxes, reader)
-    
-    contactName = findContactName(img_results)
-    appended_results = addNames(img_results, contactName)
-    metadata, conversation = compileAnalysis(appended_results)
+        img_result["boxes"] = ocr.extract_text_from_boxes(pil_image, img_result["boxes"], reader)
 
-    print(f"final conversation: {conversation}")
-    print(f"final metadata: {metadata}")
+    contact_name = findContactName(img_results, converted_files=converted_files, reader=reader) or os.getenv(
+        "CHATBRAIN_DEFAULT_CONTACT_NAME", "Other"
+    )
+    attributed_results = addNames(img_results, contact_name)
+    metadata, conversation = compileAnalysis(attributed_results)
+    return metadata, conversation, attributed_results
 
-    return metadata, conversation, img_results
 
-def compileAnalysis(appended_results):
-    """
-    Combines metadata from multiple images into single analysis
-    Returns (metadata_dict, conversation_string)
-    """
-    compiledMetadata = {
-        "total_messages": 0,
-        "total_characters": 0
-    }
-    conv = ""
+def compileAnalysis(attributed_results):
+    compiled_metadata = {"total_messages": 0, "total_characters": 0}
+    conversation_lines: List[str] = []
 
-    # Process each image result
-    for img_result in appended_results:
-        text = "\n".join(box['text'] for box in img_result['boxes'] if box['cls'] != 2)
-        img_metadata, splitConv = local_analysis.metadata_analysis(text, "image", local_analysis.detect_platform(text))
-        
-        # Add to conversation
-        conv += splitConv
+    for img_result in attributed_results:
+        text = "\n".join(
+            box["text"].strip()
+            for box in img_result["boxes"]
+            if box["cls"] != 2 and box["text"].strip() and not _is_ui_noise(box["text"])
+        )
+        img_metadata, split_conv = local_analysis.metadata_analysis(text, "image", "generic")
+        if split_conv:
+            conversation_lines.append(split_conv.strip())
 
-        # Add counts to totals
-        compiledMetadata["total_messages"] += img_metadata["total_messages"]
-        compiledMetadata["total_characters"] += img_metadata["total_characters"]
+        compiled_metadata["total_messages"] += img_metadata["total_messages"]
+        compiled_metadata["total_characters"] += img_metadata["total_characters"]
 
-        # Update per-user stats
         for user, data in img_metadata.items():
-            if user not in ["total_messages", "total_characters"]:
-                if user not in compiledMetadata:
-                    compiledMetadata[user] = {
-                        "number_messages": data["number_messages"],
-                        "number_characters": data["number_characters"]
-                    }
-                else:
-                    compiledMetadata[user]["number_messages"] += data["number_messages"]
-                    compiledMetadata[user]["number_characters"] += data["number_characters"]
+            if user in {"total_messages", "total_characters"}:
+                continue
+            if user not in compiled_metadata:
+                compiled_metadata[user] = {
+                    "number_messages": data["number_messages"],
+                    "number_characters": data["number_characters"],
+                }
+                continue
+            compiled_metadata[user]["number_messages"] += data["number_messages"]
+            compiled_metadata[user]["number_characters"] += data["number_characters"]
 
-    return compiledMetadata, conv
+    return compiled_metadata, "\n".join(line for line in conversation_lines if line).strip()
 
-def addNames(img_results, contactName):
-    """appends a name at the start of a box's text depending on the posClass of the box and the oneSidedness of the image"""
+
+def _speaker_from_box(box, contact_name: str, conversation_side: str) -> str | None:
+    if box["cls"] == 2 or not box.get("text"):
+        return None
+
+    if box["conf"] >= 0.45 and box["cls"] == 0:
+        return contact_name
+    if box["conf"] >= 0.45 and box["cls"] == 1:
+        return "You"
+
+    if conversation_side == "left":
+        return contact_name
+    if conversation_side == "right":
+        return "You"
+
+    return contact_name if box.get("side") == "left" else "You"
+
+
+def _is_ui_noise(text: str) -> bool:
+    stripped = text.strip()
+    content = re.sub(r"^[^:]+:\s*", "", stripped)
+    lowered = content.lower()
+    if re.fullmatch(r"\d+\s?[a-zA-Z]", content):
+        return True
+    return any(marker in lowered for marker in UI_NOISE_MARKERS)
+
+
+def addNames(img_results, contact_name):
     processed_results = []
     for img_result in img_results:
         processed_boxes = []
-        if img_result['oneSided'] is True:
-            for box in img_result['boxes']:
-                box['text'] +="\n"
-                processed_boxes.append(box)
-        else :
-            for box in img_result['boxes']:
-                if box['conf'] > 0.5:
-                    if box['cls'] == 0:
-                        box['text'] = f"{contactName}: {box['text']}\n"
-                    elif box['cls'] == 1:
-                        box['text'] = f"You: {box['text']}\n"
-                else:
-                    if box['posClass'] == 0:
-                        box['text'] = f"{contactName}: {box['text']}\n"
-                    elif box['posClass'] == 1:
-                        box['text'] = f"You: {box['text']}\n"
-                processed_boxes.append(box)
-        processed_results.append({'boxes': processed_boxes, 'oneSided': img_result['oneSided']})
+        for box in img_result["boxes"]:
+            text = box.get("text", "").strip()
+            speaker = _speaker_from_box(box, contact_name, img_result.get("conversationSide", "mixed"))
+            box["assignedUser"] = speaker
+            if speaker and text:
+                box["text"] = f"{speaker}: {text}"
+            else:
+                box["text"] = text
+            processed_boxes.append(box)
+
+        processed_results.append(
+            {
+                "boxes": processed_boxes,
+                "oneSided": img_result["oneSided"],
+                "conversationSide": img_result.get("conversationSide", "unknown"),
+            }
+        )
     return processed_results
 
-def buildConversation(appended_results):
-    conversation = ""
-    for img_result in appended_results:
-        for box in img_result['boxes']:
-            if box['text'] != "" and box['cls'] != 2:
-                conversation += box['text']
-    return conversation
 
-def findContactName(img_results):
-    """Finds the contact name in the set of images (highest conf, class 2)"""
-    maxConf = 0
-    contactName = None
+def _header_name_candidates(converted_files, reader):
+    for cv_image in converted_files:
+        height, width = cv_image.shape[:2]
+        header = cv_image[0 : max(1, int(height * 0.18)), int(width * 0.15) : int(width * 0.85)]
+        if header.size == 0:
+            continue
+        tokens = reader.readtext(header, detail=0, paragraph=False, decoder="greedy", beamWidth=1)
+        cleaned_tokens = [
+            token.strip()
+            for token in tokens
+            if token.strip() and token.strip().lower() not in HEADER_NOISE_MARKERS
+        ]
+        for token in cleaned_tokens:
+            if re.fullmatch(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{1,40}", token):
+                yield token
+
+
+def findContactName(img_results, converted_files=None, reader=None):
+    max_conf = -1.0
+    contact_name = None
     for img_result in img_results:
-        for box in img_result['boxes']:
-            if box['cls'] == 2:
-                if box['conf'] > maxConf:
-                    maxConf = box['conf']
-                    contactName = box['text']
-    # remove non-alphanumeric characters
-    if contactName:
-        contactName = ''.join(c for c in contactName.split() if c.isalnum())
-    return contactName
+        for box in img_result["boxes"]:
+            text = box.get("text", "").strip()
+            if box["cls"] == 2 and text and not _is_ui_noise(text) and box["conf"] > max_conf:
+                max_conf = box["conf"]
+                contact_name = text
 
-if __name__ == "__main__":
-    # Load image
-    model_path = "backend/vision/best.pt"
-    vision_model = classifier.YOLO(model_path)
-    image_paths = ["backend/vision/dataset/raw/why-did-alexa-stop-talking-to-me-she-seemed-nice-v0-xxaq456yw7ce1.webp"]
-    metadata = getImageMetadata(image_paths, vision_model)
+    if not contact_name:
+        if converted_files is not None and reader is not None:
+            for candidate in _header_name_candidates(converted_files, reader):
+                if not _is_ui_noise(candidate):
+                    contact_name = candidate
+                    break
+        if not contact_name:
+            return None
+
+    cleaned = "".join(character for character in contact_name if character.isalnum() or character in {" ", "-"}).strip()
+    return cleaned or None

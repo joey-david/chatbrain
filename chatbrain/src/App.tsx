@@ -1,45 +1,31 @@
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Home } from './components/pages/home'
 import { Header } from './components/header'
 import { Footer } from './components/footer'
 import { Use } from './components/pages/use'
 import './App.css'
 
-const GradientBackground = () => {
-  const gradientRef = useRef<HTMLDivElement>(null)
+const RouteGlow = () => {
   const location = useLocation()
 
   useEffect(() => {
-    if (!gradientRef.current) return
-
-    switch (location.pathname) {
-      case '/':
-        gradientRef.current.style.setProperty('--size', '25rem')
-        gradientRef.current.style.setProperty('--speed', '15s')
-        break
-      case '/use':
-        gradientRef.current.style.setProperty('--size', '70vw')
-        gradientRef.current.style.setProperty('--speed', '30s')
-        gradientRef.current.style.setProperty('left', '0rem')
-        break
-      default:
-        gradientRef.current.style.setProperty('--size', '40rem')
-
-        break
-    }
+    document.documentElement.dataset.route = location.pathname
   }, [location])
 
-  return <div className="gradient fixed" ref={gradientRef} />
+  return (
+    <div className="background-container" aria-hidden="true">
+      <div className="glow glow-one" />
+      <div className="glow glow-two" />
+    </div>
+  )
 }
 
 function App() {
   return (
     <Router>
-      <div className='background-container'>
-        <GradientBackground />
-      </div>
-      <div id="root">
+      <RouteGlow />
+      <div id="root" className="app-shell">
         <Header />
         <main>
           <Routes>

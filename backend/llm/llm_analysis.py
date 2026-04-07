@@ -1,142 +1,208 @@
-from openai import OpenAI
-from dotenv import load_dotenv
+from __future__ import annotations
+
+import json
 import os
-import deepseek_v2_tokenizer as dtok
-import pickle
+import re
+from functools import lru_cache
+from typing import Dict, List, TypedDict
 
-load_dotenv()  # Load environment variables from .env file
-model_name = "deepseek-ai/DeepSeek-V3"
-base_url = "https://api.deepseek.com"
+from dotenv import load_dotenv
+from openai import OpenAI
 
-# usage stats : https://platform.deepseek.com/usage
-client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url=base_url)
 
-def calculate_api_cost(chat_completion):
-  # Pricing information
-  input_price_cache_hit = 0.014  # $0.014 per 1M tokens (cache hit)
-  input_price_cache_miss = 0.14  # $0.14 per 1M tokens (cache miss)
-  output_price = 0.28  # $0.28 per 1M tokens
+load_dotenv()
 
-  # Extract token usage details from the ChatCompletion object
-  usage = chat_completion.usage
-  prompt_tokens = usage.prompt_tokens
-  completion_tokens = usage.completion_tokens
-  prompt_cache_hit_tokens = usage.prompt_cache_hit_tokens
-  prompt_cache_miss_tokens = usage.prompt_cache_miss_tokens
+DEFAULT_MAX_INPUT_CHARS = int(os.getenv("CHATBRAIN_LLM_MAX_INPUT_CHARS", "12000"))
+DEFAULT_OPENAI_MODEL = os.getenv("CHATBRAIN_OPENAI_MODEL", "gpt-4o-mini")
+DEFAULT_DEEPSEEK_MODEL = os.getenv("CHATBRAIN_DEEPSEEK_MODEL", "deepseek-chat")
 
-  # Calculate input cost based on cache hit/miss
-  input_cost_cache_hit = (prompt_cache_hit_tokens / 1_000_000) * input_price_cache_hit
-  input_cost_cache_miss = (prompt_cache_miss_tokens / 1_000_000) * input_price_cache_miss
-  total_input_cost = input_cost_cache_hit + input_cost_cache_miss
 
-  # Calculate output cost
-  total_output_cost = (completion_tokens / 1_000_000) * output_price
+def _clip_conversation(conversation: str, max_chars: int = DEFAULT_MAX_INPUT_CHARS) -> str:
+    if len(conversation) <= max_chars:
+        return conversation
 
-  # Total cost
-  total_cost = total_input_cost + total_output_cost
+    lines = [line for line in conversation.splitlines() if line.strip()]
+    if len(lines) <= 6:
+        return conversation[:max_chars]
 
-  return total_cost
+    keep_head = max(2, len(lines) // 3)
+    keep_tail = max(2, len(lines) // 3)
+    middle = lines[keep_head:-keep_tail]
 
-def getSystemPrompt(users):
-  
-  if users == ["unidentifiable"]:
-    user_details = """Since this file contains no user information, do your best to find the users' names from the prompt.
-      If you absolutely can't, name them User1, User2, etc."""
+    budget = max_chars - sum(len(line) + 1 for line in (lines[:keep_head] + lines[-keep_tail:])) - 32
+    sampled_middle = []
+    if budget > 0 and middle:
+        step = max(1, len(middle) // 8)
+        for line in middle[::step]:
+            if budget <= len(line):
+                break
+            sampled_middle.append(line)
+            budget -= len(line) + 1
 
-  else:
-    user_details = ", ".join([f"{user}" for user in users if user != "unidentifiable"])
+    clipped = lines[:keep_head] + ["[...conversation truncated for budget...]"] + sampled_middle + lines[-keep_tail:]
+    return "\n".join(clipped)[:max_chars]
 
-  return f"""
-    Act as a forensic conversation analyst with expertise in microexpression decoding and personality archetype detection. 
-    Perform a multi-layered analysis of this chat between {user_details} using these advanced techniques:
+def getSystemPrompt(users: List[str], metadata: Dict | None = None) -> str:
+    participants = ", ".join(user for user in users if user and user != "unidentifiable") or "User1, User2"
+    metadata_hint = json.dumps(metadata, ensure_ascii=False) if metadata else "null"
 
-    1. **Conversation-level matrix (100pt scales):**
-      - Linguistic Synchrony Score: How users subconsciously mirror communication patterns (vocabulary, sentence length, emoji use)
-      - Trust Asymmetry Score: Imbalanced reliance levels measured through vulnerability disclosures
-      - Temporal Engagement Score: Consistency of involvement across conversation timeline
+    return f"""
+You analyze chat conversations and produce spectacular, high-signal character and relationship reads.
 
-    2) **User-level metrics (for each user by name, 100pt scale):**
-    - Emotional Complexity: Nuance range in emotional expression (1D anger->5D wistful nostalgia)
-    - Social Perception Score: Accuracy in interpreting others' unstated needs
-    - Cognitive Dissonance: Contradictions between stated values and behavioral patterns
-    - Vulnerability Activation: Frequency of self-disclosure triggers
-    - Temporal Consistency: Personality stability across conversation timeline
-    - Trust: Implicit faith in others measured through delegation frequency
-    - Conceptual proficiency: Ability to grasp complex ideas and explain them clearly
-    
-    3. **Insights Protocol:**
-    Generate 3 "DNA Insights" following these rules:
-    - MUST combine at least 3 micro-patterns into one deduction
-    - MUST be relevant to the conversation context
-    - MUST be precise and targeted
-    - Present in original message language
-    - MUST be around 3 or 4 sentences long
+Rules:
+- Distinguish speakers strictly by the provided labels: {participants}.
+- Do not invent extra speakers, merge speakers, or rename them.
+- You may make bold hypotheses and non-obvious social or psychological inferences, but they must still be traceable to the tone, wording, pacing, asymmetry, and interaction patterns in the messages.
+- Keep the insights in the dominant language of the conversation.
+- Return JSON only, with no markdown or commentary.
+- The insights must not be summaries. They should feel incisive, specific, and memorable.
 
-    IMPOSED OUTPUT JSON FORMAT: 
-
-    {{
-    "conversation_metrics": {{
-      "linguistic_synchrony_score": int
-      "conflict_potential_score": int,
-      "trust_asymetry_score": int,
-      "temporal_engagement_score": int
-    }},
-    "users": {{
-      // FOR EACH USER in {user_details}
-      username: {{
-        "emotional_complexity": int,
-        "social_perception": int,
-        "cognitive_dissonance": int,
-        "vulnerability_activation": int,
-        "temporal_consistency": int,
-        "trust": int
-        "conceptual_proficiency": int
-      }},
-      "insights": ["Insight 1", "Insight 2", "Insight 3"]
+Use this exact schema:
+{{
+  "conversation_metrics": {{
+    "stability_score_out_of_100": 0,
+    "health_score_out_of_100": 0,
+    "intensity_score_out_of_100": 0
+  }},
+  "users": {{
+    "{participants.split(', ')[0]}": {{
+      "assertiveness": 0,
+      "positiveness": 0,
+      "affection_towards_other": 0,
+      "romantic_attraction_towards_other": 0,
+      "rationality": 0,
+      "emotiveness": 0,
+      "IQ_estimate": 0
     }}
-  """
-
-def promptToJSON(prompt, maxOutputTokens, users=[], model_name="deepseek-ai/DeepSeek-V3"):
-  # build the system prompt
-  systemPrompt = getSystemPrompt(users)
-
-  #check for outsanding prices, get general token information
-  price, tokenCount = dtok.apiCallPrice(prompt + systemPrompt, maxOutputTokens, model_name)
-  print(f"Token count: {tokenCount}")
-  if price > 0.002:
-    print(f"Warning: This API call will cost ${price:.4f} USD.")
-    raise ValueError("API call price exceeds $0.002 USD.")
-    
-  # make the API call
-  response = api_call("deepseek-chat", maxOutputTokens, prompt, systemPrompt)
-  if response.choices[0].message.refusal != None:
-    print("Model refused to answer for the following reason:")
-    print(response.choices[0].message.refusal)
-    return None  
-  jsonOutput = response.choices[0].message.content
-  return jsonOutput, response
-
-def api_call(model, maxOutputTokens, userPrompt, systemPrompt=None):
-
-  response = client.chat.completions.create(
-    model=model,
-    messages=[
-      {"role": "system", "content": systemPrompt},
-      {"role": "user", "content": userPrompt}
-    ],
-    max_tokens=maxOutputTokens,
-    response_format={'type': 'json_object'}
-  )
-  # pickle the response object
-  with open("chat_completion.pkl", "wb") as f:
-    pickle.dump(response, f)
+  }},
+  "insights": ["", "", ""]
+}}
+Available metadata summary:
+{metadata_hint}
+""".strip()
 
 
+def _extract_json(content: str):
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", content, re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
 
-  # with open("chat_completion.pkl", "rb") as f:
-  #   response = pickle.load(f)
+class ClientConfig(TypedDict):
+    api_key: str
+    model: str
+    base_url: str | None
 
-  return (response)
 
-if __name__ == "__main__":
-  print(getSystemPrompt(["Alice", "Bob"], ["A", "B"]))
+def _resolve_client_config() -> ClientConfig | None:
+    if os.getenv("CHATBRAIN_ENABLE_LLM", "true").lower() == "false":
+        return None
+
+    explicit_api_key = os.getenv("CHATBRAIN_LLM_API_KEY")
+    explicit_base_url = os.getenv("CHATBRAIN_LLM_BASE_URL")
+    explicit_model = os.getenv("CHATBRAIN_LLM_MODEL")
+
+    if explicit_api_key:
+        return {
+            "api_key": explicit_api_key,
+            "base_url": explicit_base_url or None,
+            "model": explicit_model or DEFAULT_OPENAI_MODEL,
+        }
+
+    deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+    if deepseek_api_key:
+        return {
+            "api_key": deepseek_api_key,
+            "base_url": explicit_base_url or "https://api.deepseek.com",
+            "model": explicit_model or DEFAULT_DEEPSEEK_MODEL,
+        }
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if openai_api_key:
+        return {
+            "api_key": openai_api_key,
+            "base_url": explicit_base_url or None,
+            "model": explicit_model or DEFAULT_OPENAI_MODEL,
+        }
+
+    return None
+
+
+@lru_cache(maxsize=1)
+def _client_config() -> ClientConfig | None:
+    return _resolve_client_config()
+
+
+@lru_cache(maxsize=1)
+def _client() -> OpenAI | None:
+    config = _client_config()
+    if config is None:
+        return None
+    if config["base_url"]:
+        return OpenAI(api_key=config["api_key"], base_url=config["base_url"])
+    return OpenAI(api_key=config["api_key"])
+
+
+def _create_json_completion(client: OpenAI, model: str, messages: List[Dict[str, str]], max_output_tokens: int):
+    try:
+        return client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_output_tokens,
+            response_format={"type": "json_object"},
+            temperature=0.2,
+        )
+    except Exception as exc:
+        unsupported_json_mode = any(
+            token in str(exc).lower()
+            for token in ("response_format", "json_object", "unsupported", "invalid parameter")
+        )
+        if not unsupported_json_mode:
+            raise
+
+        fallback_messages = messages + [
+            {
+                "role": "user",
+                "content": "Return valid JSON only. Do not wrap it in markdown.",
+            }
+        ]
+        return client.chat.completions.create(
+            model=model,
+            messages=fallback_messages,
+            max_tokens=max_output_tokens,
+            temperature=0.2,
+        )
+
+
+def promptToJSON(prompt: str, maxOutputTokens: int = 900, users: List[str] | None = None, metadata: Dict | None = None):
+    users = [user for user in (users or []) if user]
+    clipped_prompt = _clip_conversation(prompt)
+    client = _client()
+    config = _client_config()
+
+    if client is None or config is None:
+        raise RuntimeError("LLM analysis is unavailable because no API key is configured.")
+
+    response = _create_json_completion(
+        client=client,
+        model=config["model"],
+        messages=[
+            {"role": "system", "content": getSystemPrompt(users, metadata)},
+            {"role": "user", "content": clipped_prompt},
+        ],
+        max_output_tokens=maxOutputTokens,
+    )
+
+    content = response.choices[0].message.content or "{}"
+    try:
+        parsed = _extract_json(content)
+    except json.JSONDecodeError:
+        raise RuntimeError("The LLM response was not valid JSON.")
+
+    parsed.setdefault("insights", [])
+    parsed.setdefault("users", {})
+    parsed.setdefault("conversation_metrics", {})
+    return parsed

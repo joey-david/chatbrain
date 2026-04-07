@@ -9,7 +9,9 @@ import { TextInputSection } from "@/components/ui/textInputSelection"
 import { ImageResults } from "@/components/imageResults"
 
 type FileType = 'txt' | 'img' | 'aud' | null
-type AnalysisState = 'idle' | 'metadata' | 'llm' | 'complete'
+type AnalysisState = 'idle' | 'metadata' | 'llm' | 'complete' | 'error'
+type LoadingPhase = 'preparing' | 'uploading' | 'extracting' | 'llm'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? window.location.origin).replace(/\/$/, '')
 
 function Analysis() {
   // File handling state
@@ -28,8 +30,8 @@ function Analysis() {
 
   // Progress tracking
   const [error, setError] = useState<string | undefined>(undefined)
-  const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState("")
+  const [loadingPhase, setLoadingPhase] = useState<LoadingPhase>('preparing')
   
   // Fetch guards
   const metadataFetchedRef = useRef(false)
@@ -44,10 +46,10 @@ function Analysis() {
     setUsers([])
     setLlmResults(null)
     setAnalysisState('idle')
-    setProgress(0)
     setStatus("")
     setError(undefined)
     setImageResults(null)
+    setLoadingPhase('preparing')
   }, [])
 
   // File handling
@@ -55,26 +57,38 @@ function Analysis() {
     try {
       validateFiles(files)
       const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name))
-      
-      // Scale down images if needed
-      if (detectFileType(sortedFiles[0]) === 'img') {
+      const selectedType = detectFileType(sortedFiles[0])
+
+      const beginAnalysis = (filesToUse: File[], nextType: FileType) => {
+        setSelectedFiles(filesToUse)
+        setFileType(nextType)
+        resetState()
+        setAnalysisState('metadata')
+        setLoadingPhase('preparing')
+        setStatus(`Prepared ${filesToUse.length} file${filesToUse.length === 1 ? "" : "s"} for analysis`)
+      }
+
+      // Scale down tall screenshots before upload to reduce OCR latency on CPU-only servers.
+      if (selectedType === 'img') {
         Promise.all(sortedFiles.map(file => new Promise<File>((resolve) => {
+          const objectUrl = URL.createObjectURL(file)
           const img = new Image()
           img.onload = () => {
             const canvas = document.createElement('canvas')
             let width = img.width
             let height = img.height
-            
+
             if (height > 1000) {
               width = Math.floor(width * (1000 / height))
               height = 1000
             }
-            
+
             canvas.width = width
             canvas.height = height
             const ctx = canvas.getContext('2d')
             ctx?.drawImage(img, 0, 0, width, height)
-            
+            URL.revokeObjectURL(objectUrl)
+
             canvas.toBlob((blob) => {
               if (blob) {
                 resolve(new File([blob], file.name, { type: file.type }))
@@ -83,21 +97,18 @@ function Analysis() {
               }
             }, file.type)
           }
-          img.src = URL.createObjectURL(file)
+          img.onerror = () => {
+            URL.revokeObjectURL(objectUrl)
+            resolve(file)
+          }
+          img.src = objectUrl
         }))).then(scaledFiles => {
-          setSelectedFiles(scaledFiles)
-          setFileType('img')
-          resetState()
-          setAnalysisState('metadata')
-          setProgress(5)
+          beginAnalysis(scaledFiles, 'img')
         })
-      } else {
-        setSelectedFiles(sortedFiles)
-        setFileType(detectFileType(sortedFiles[0]))
-        resetState()
-        setAnalysisState('metadata')
-        setProgress(5)
+        return
       }
+
+      beginAnalysis(sortedFiles, selectedType)
     } catch (error) {
       console.error("File validation error:", error)
     }
@@ -116,10 +127,12 @@ function Analysis() {
 
     async function fetchMetadata() {
       try {
+        setLoadingPhase('uploading')
+        setStatus(`Reading ${selectedFiles.length} file${selectedFiles.length === 1 ? "" : "s"}`)
         const formData = new FormData()
         selectedFiles.forEach(file => formData.append('files', file))
         
-        const response = await fetch('http://localhost:5000/metadata', {
+        const response = await fetch(`${API_BASE_URL}/metadata`, {
           method: 'POST',
           body: formData
         })
@@ -128,6 +141,8 @@ function Analysis() {
           throw new Error(`Metadata fetch failed: ${response.statusText}`)
         }
         
+        setLoadingPhase('extracting')
+        setStatus("Extracting speakers and conversation structure")
         const { metadata, conversation, img_results } = await response.json()
         const userList = Object.keys(metadata).filter(key => 
           !['total_messages', 'total_characters'].includes(key)
@@ -143,15 +158,15 @@ function Analysis() {
 
         if (userList.length === 0) {
           setAnalysisState('idle')
-          setProgress(0)
+          setStatus("No conversation detected in the uploaded input")
         } else {
           setAnalysisState('llm')
-          setProgress(50)
+          setLoadingPhase('llm')
         }
       } catch (error) {
         console.error('Metadata error:', error)
         setError(error instanceof Error ? error.message : 'Unknown error')
-        setAnalysisState('idle')
+        setAnalysisState('error')
       }
     }
 
@@ -164,43 +179,48 @@ function Analysis() {
 
     async function fetchLLM() {
       try {
-        const response = await fetch('http://localhost:5000/llm', {
+        setLoadingPhase('llm')
+        setStatus("Generating objective conversation analysis")
+        const response = await fetch(`${API_BASE_URL}/llm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversation, users })
+          body: JSON.stringify({ conversation, users, metadata: metadataResults })
         })
 
-        if (!response.ok) throw new Error('LLM fetch failed')
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null)
+          throw new Error(payload?.error || 'LLM fetch failed')
+        }
         
         const results = await response.json()
         setLlmResults(results)
         llmFetchedRef.current = true
         setAnalysisState('complete')
-        setProgress(100)
+        setStatus("Analysis complete")
       } catch (error) {
         console.error('LLM error:', error)
-        setAnalysisState('metadata')
+        setError(error instanceof Error ? error.message : 'Unknown LLM error')
+        setAnalysisState('error')
       }
     }
 
     fetchLLM()
-  }, [conversation, users, analysisState])
+  }, [conversation, users, metadataResults, analysisState])
 
   // Update status based on state
   useEffect(() => {
     switch (analysisState) {
       case 'metadata':
-        setStatus("Analyzing metadata...")
-        // if the files are of type image, add a note about OCR
-        if (fileType === 'img') {
-          setStatus("GPU-less OCR: this should take a few secs/image.")
-        }
+        setStatus(prev => prev || "Reading conversation input")
         break
       case 'llm':
-        setStatus("Running LLM analysis...")
+        setStatus(prev => prev || "Generating objective conversation analysis")
         break
       case 'complete':
-        setStatus("Analysis complete!")
+        setStatus("Analysis complete")
+        break
+      case 'error':
+        setStatus(prev => prev || "Analysis failed")
         break
       default:
         setStatus("")
@@ -208,7 +228,7 @@ function Analysis() {
   }, [analysisState])
 
   return (
-    <div className="border-none text-center rounded-xl p-5 items-center flex flex-col transition-all duration-300 ease-in-out overflow-hidden">
+    <div className="flex w-full flex-col items-center overflow-hidden rounded-[1.75rem] border-none p-2 text-center transition-all duration-300 ease-in-out md:p-4">
       <input
         type="file"
         ref={fileInputRef}
@@ -248,18 +268,18 @@ function Analysis() {
       )}
       {metadataResults && <MetadataResults data={metadataResults} />}
       {analysisState === 'complete' && llmResults && (
-        <div className="max-w-7xl mt-6 w-full">
+        <div className="mt-6 w-full max-w-7xl">
           <LLMResults data={llmResults} />
         </div>
       )}
-      {analysisState !== 'idle' && analysisState !== 'complete' &&(
+      {(analysisState !== 'idle' && analysisState !== 'complete') || error ? (
       <LoadingBar 
-        progress={progress} 
+        phase={loadingPhase}
         status={status} 
-        error={error} 
         fileCount={selectedFiles.length}
+        error={error} 
       />
-    )}
+    ) : null}
     </div>
   )
 }

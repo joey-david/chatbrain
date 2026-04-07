@@ -1,39 +1,38 @@
 function TextTutorial() {
   return (
-    <div className="p-4 max-w-5xl">
-        <div>
-            <h2 className="text-2xl font-medium mb-2">1. Copy and pasting from another platform</h2>
-            <div className="flex flex-row items-center justify-center space-x-6 mt-8">
-                <div className="w-2/5 space-y-4 text-lg">
-                    <p>You can manually <b>copy and paste</b> conversations from any platform to chatbrain.</p>
-                    <p className="text-left">1. Navigate to your platform/app of choice<br/>
-                    2. Select the conversation you want to copy<br/>
-                    3. Press <b><code>ctrl+c</code></b> (on smartphone, long-press then hit copy).<br/>
-                    4. Navigate back to chatbrain, and under the <a href="/use"><b><i>Analyze a conversation</i></b></a> tab,
-                     click the <br/>"<b><i>Type/paste text</i></b>" button.<br/>
-                    5. Press <b><code>ctrl+v</code></b> (on smartphone, long-press then hit paste), then click <b><i>Submit</i></b>.</p>
-                </div>
-                <img src="src/assets/copypaste.gif"
-                    alt="Tutorial GIF" 
-                    className="w-3/5 h-auto rounded-lg opacity-75 shadow-xl shadow-black" />
-            </div>
-            <h2 className="text-2xl font-medium my-8">2. Transcribing manually</h2>
-            <div className="flex flex-row items-center justify-center space-x-6">
-                <img src="src/assets/type.gif"
-                    alt="Tutorial GIF" 
-                    className="w-3/5 h-auto rounded-lg opacity-75 shadow-xl shadow-black" />
-                <div className="w-2/5 space-y-4 text-lg">
-                    <p>If copy and pasting is impossible, you can always <b>transcribe</b> the conversation yourself.</p>
-                    <p className="text-left">1. Under the <a href="/use"><b><i>Analyze a conversation</i></b></a> tab,
-                    click the "<b><i>Type/paste text</i></b>" button.<br/>
-                    2. Write down the conversation in the text box provided, making sure to respect the following format for each line:<br/></p>
-                    <code className="text-center">Username: message</code><br/>
-                    <p className="text-left">3. Once you're done, simply click <b><i>Submit</i></b>.</p>
-                </div>
-            </div>
+    <div className="mx-auto max-w-4xl p-4 text-left">
+      <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-6">
+        <h2 className="text-2xl font-medium text-white">1. Paste from another platform</h2>
+        <div className="mt-5 space-y-4 text-zinc-300">
+          <p>
+            You can manually <b>copy and paste</b> conversations from any platform into ChatBrain.
+          </p>
+          <ol className="space-y-2 text-sm leading-6 text-zinc-400">
+            <li>1. Open the conversation you want to analyze.</li>
+            <li>2. Copy the messages from the app or website.</li>
+            <li>3. Go to the <a href="/use" className="text-white underline">Analyze</a> page and click <b>Type/paste text</b>.</li>
+            <li>4. Paste the conversation, then submit it.</li>
+          </ol>
         </div>
+      </section>
+
+      <section className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-6">
+        <h2 className="text-2xl font-medium text-white">2. Transcribe manually</h2>
+        <div className="mt-5 space-y-4 text-zinc-300">
+          <p>If copying is impossible, you can still enter the conversation by hand.</p>
+          <p className="text-sm leading-6 text-zinc-400">
+            Use one message per line and keep the format:
+          </p>
+          <code className="block rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center text-white">
+            Username: message
+          </code>
+          <p className="text-sm leading-6 text-zinc-400">
+            Once the text is structured that way, ChatBrain can split speakers and compute metadata reliably.
+          </p>
+        </div>
+      </section>
     </div>
   )
-};
+}
 
-export default TextTutorial;
+export default TextTutorial

@@ -1,54 +1,94 @@
-import easyocr
-from PIL import Image
-import time
-import numpy as np
-import re
+from __future__ import annotations
 
-def extract_text_from_boxes(image, boxes, reader):
-    """Modifies the boxes to include a 'content' field with the extracted text."""
-    start_time = time.time()
+import re
+import time
+from typing import Any, Dict, Iterable, List
+
+import numpy as np
+from PIL import Image, ImageOps
+
+
+def _clamp(value: int, lower: int, upper: int) -> int:
+    return max(lower, min(value, upper))
+
+
+def _crop_from_box(image: Image.Image, box: Dict[str, Any], padding_ratio: float = 0.015) -> Image.Image | None:
     width, height = image.size
-    
+    x, y, w, h = box["xywhn"]
+
+    pad_x = int(width * padding_ratio)
+    pad_y = int(height * padding_ratio)
+
+    x1 = _clamp(int((x - w / 2) * width) - pad_x, 0, width)
+    x2 = _clamp(int((x + w / 2) * width) + pad_x, 0, width)
+    y1 = _clamp(int((y - h / 2) * height) - pad_y, 0, height)
+    y2 = _clamp(int((y + h / 2) * height) + pad_y, 0, height)
+
+    if x2 <= x1 or y2 <= y1:
+        return None
+
+    crop = image.crop((x1, y1, x2, y2))
+    if crop.width < 8 or crop.height < 8:
+        return None
+    return crop
+
+
+def _prepare_crop(crop: Image.Image) -> np.ndarray:
+    grayscale = ImageOps.grayscale(crop)
+    contrast = ImageOps.autocontrast(grayscale)
+
+    if contrast.width < 320:
+        scale = 320 / contrast.width
+        contrast = contrast.resize(
+            (max(1, int(contrast.width * scale)), max(1, int(contrast.height * scale))),
+            Image.Resampling.LANCZOS,
+        )
+
+    return np.array(contrast)
+
+
+def _read_text(reader: Any, crop: Image.Image) -> str:
+    prepared = _prepare_crop(crop)
+    result = reader.readtext(
+        prepared,
+        detail=0,
+        paragraph=False,
+        decoder="greedy",
+        beamWidth=1,
+        batch_size=1,
+    )
+    if not isinstance(result, Iterable):
+        return ""
+    return " ".join(fragment for fragment in result if fragment)
+
+
+def extract_text_from_boxes(image: Image.Image, boxes: List[Dict[str, Any]], reader: Any):
+    start_time = time.perf_counter()
+
     for box in boxes:
-        x, y, w, h = box['xywhn']
-        x1, x2, y1, y2 = int((x - w/2) * width), int((x + w/2) * width), int((y - h/2) * height), int((y + h/2) * height)
+        crop = _crop_from_box(image, box)
+        if crop is None:
+            box["text"] = ""
+            continue
+
         try:
-            cropped_image = image.crop((x1, y1, x2, y2))
-            cropped_image_np = np.array(cropped_image)  # Convert PIL image to numpy array
-            result = reader.readtext(cropped_image_np)
-            text = " ".join([res[1] for res in result])
-            box['text'] = treatLine(text, box['cls'])
-        except Exception as e:
-            print(f"Error processing box: {e}")
-            box['text'] = ""
-        if x1 < 0 or y1 < 0 or x2 > width or y2 > height:
-            print(f"Invalid box dimensions: x1={x1}, y1={y1}, x2={x2}, y2={y2}")
-            box['text'] = ""
-            
-    end_time = time.time()
-    print(f"OCR Time taken : {round(end_time - start_time, 2)} seconds")
+            box["text"] = treatLine(_read_text(reader, crop), box["cls"])
+        except Exception:
+            box["text"] = ""
+
+    print(f"OCR time: {time.perf_counter() - start_time:.2f}s")
     return boxes
 
-def treatLine(line, box_class):
-    """Returns a string with:
-    - no double spaces
-    - no leading or trailing spaces
-    - fixed date/time format
-    - if class is 2 (contact), remove and non-alphanumeric characters (leave spaces)"""
-    if box_class == 2:
-        line = re.sub(r'[^\w\s]', '', line).strip()  # Remove all non-alphanumeric characters except spaces
-    else:
-        # Fix time format
-        line = re.sub(r'(\d{1,2})[.,;](\d{2})', r'\1:\2', line)
-        # Fix date format
-        line = re.sub(r'(\d{1,2})[.,;#!\()|](\d{1,2})[.,;#!\()|](\d{2,4})', r'\1/\2/\3', line)
-        line = " ".join(line.split()).strip()
-    return line
 
-if __name__ == "__main__":
-    # Load image
-    reader = easyocr.Reader(['fr'], gpu=False)
-    # prompt the user to upload an image
-    image = Image.open("chatbrain/src/assets/tutorialImage8.png")
-    boxes = [{'xywhn': [0.5, 0.5, 0.5, 0.5], 'conf': 0.99, 'cls': 0}]
-    boxes = extract_text_from_boxes(image, boxes, reader)
+def treatLine(line: str, box_class: int) -> str:
+    line = " ".join(line.split()).strip()
+    if not line:
+        return ""
+
+    if box_class == 2:
+        return re.sub(r"[^\w\s-]", "", line).strip()
+
+    line = re.sub(r"(\d{1,2})[.,;](\d{2})", r"\1:\2", line)
+    line = re.sub(r"(\d{1,2})[.,;#!()|](\d{1,2})[.,;#!()|](\d{2,4})", r"\1/\2/\3", line)
+    line = line.replace("|", "I")
+    return " ".join(line.split()).strip()

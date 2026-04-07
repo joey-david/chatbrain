@@ -20,26 +20,24 @@ const TabsContainer = ({ tabs }: TabsContainerProps) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto rounded-lg shadow overflow-hidden">
-      {/* Tab Headers */}
-      <div className="flex">
+    <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem]">
+      <div className="flex flex-wrap gap-2 border-b border-white/10 px-4 py-4 md:px-6">
         {tabs.map((tab, index) => (
           <button
             key={index}
             onClick={() => handleTabClick(index)}
-            className={`rounded-none flex-1 px-4 py-3 text-lg font-light transition-colors 
+            className={`rounded-full px-4 py-2.5 text-sm md:text-base transition-colors 
               ${index === activeTab
-                ? 'bg-primary/0 text-white'
-                : 'text-white bg-primary/50 hover:bg-muted-foreground/20'}`}
+                ? 'bg-white text-black'
+                : 'text-zinc-400 hover:bg-white/6 hover:text-white'}`}
           >
             {tab.title}
           </button>
         ))}
       </div>
 
-      {/* Single active tab content (no sliding) */}
       <div className="relative overflow-hidden" style={{ minHeight: 200 }}>
-        <div className="w-full p-6">
+        <div className="w-full p-4 md:p-6">
           {tabs[activeTab].component}
         </div>
       </div>

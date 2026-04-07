@@ -43,6 +43,13 @@ interface ImageWithBoxesProps {
 function ImageWithBoxes({ file, boxes }: ImageWithBoxesProps) {
     const imageRef = useRef<HTMLImageElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const objectUrlRef = useRef(URL.createObjectURL(file))
+
+    useEffect(() => {
+        return () => {
+            URL.revokeObjectURL(objectUrlRef.current)
+        }
+    }, [])
 
     useEffect(() => {
         const drawBoxes = () => {
@@ -86,7 +93,7 @@ function ImageWithBoxes({ file, boxes }: ImageWithBoxesProps) {
         <div className="relative w-[250px] rounded-xl overflow-hidden opacity-80 shadow-2xl">
             <img
                 ref={imageRef}
-                src={URL.createObjectURL(file)}
+                src={objectUrlRef.current}
                 alt={file.name}
                 className="w-full h-auto rounded-xl"
             />

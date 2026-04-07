@@ -1,85 +1,58 @@
-#root {
+.app-shell {
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
-  margin: 0 auto;
-  padding: 0;
-  z-index: 1;
+  flex-direction: column;
 }
 
-/* Animated gradient background */
 .background-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: -1;
-  transform: translateZ(-1px) scale(1.5); /* Parallax effect */
-  perspective: 50px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 28%),
+    linear-gradient(180deg, #020202 0%, #050505 55%, #020202 100%);
 }
 
-.gradient {
-  --size: 500px;
-  --speed: 20s;
-  --easing: cubic-bezier(0.8, 0.2, 0.2, 0.8);
-  --transition-speed: 1.2s;
-
+.glow {
   position: absolute;
-  width: var(--size);
-  height: var(--size);
-  filter: blur(calc(var(--size) / 5));
-  background-image: linear-gradient(hsl(234, 100%, 80%), hsl(256, 100%, 22%));
-  animation: rotate var(--speed) alternate infinite;
-  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-  left: calc(50% - var(--size) / 2);
-  top: calc(50% - var(--size) / 2);
-
-  transition: 
-    height var(--transition-speed) ease-out,
-    width var(--transition-speed) ease-out,
-    left var(--transition-speed) ease-out,
-    top var(--transition-speed) ease-out;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.6;
 }
 
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.glow-one {
+  top: -6rem;
+  left: 10%;
+  height: 20rem;
+  width: 20rem;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-@media (min-width: 40px) {
-  .gradient {
-    --size: 32rem;
-  }
-}
-
-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(3px);
+.glow-two {
+  right: -4rem;
+  bottom: 12%;
+  height: 18rem;
+  width: 18rem;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 main {
-  flex-grow: 1;
-  text-align: center;
-  justify-content: center;
+  flex: 1;
   display: flex;
-  align-items: center;
-  z-index: 2;
+  align-items: stretch;
+  justify-content: center;
+  padding: 2rem 1.25rem 3rem;
 }
 
-footer {
-  flex-shrink: 0;
-  position: relative;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-}
+@media (max-width: 768px) {
+  main {
+    padding: 1.25rem 0.75rem 2rem;
+  }
 
-header, main, footer {
-  transition: all 0.5s ease-out;
+  .glow-one,
+  .glow-two {
+    filter: blur(70px);
+    opacity: 0.4;
+  }
 }

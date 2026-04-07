@@ -28,13 +28,18 @@ export function validateFiles(files: File[]): void {
       extensions.add(extension)
     }
   })
+
+  if (fileTypes.size > 1) {
+    alert("Please upload only one file type at a time.")
+    throw new Error("Mixed file types are not supported.")
+  }
   
   if (fileTypes.has('txt') && files.length > 1) {
     alert("Only one text log is allowed at once.")
     throw new Error("Only one text log is allowed at once.")
   }
-  if (totalSize > 10 * 1024 * 1024) { // 10MB in bytes
-    alert("The total size of the files should not exceed 10MB.")
-    throw new Error("The total size of the files should not exceed 10MB.")
+  if (totalSize > 20 * 1024 * 1024) {
+    alert("The total size of the files should not exceed 20MB.")
+    throw new Error("The total size of the files should not exceed 20MB.")
   }
 }

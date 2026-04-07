@@ -1,112 +1,81 @@
-import { Loader2, Brain, AlertCircle } from "lucide-react"
-import { useEffect, useState, useRef } from "react"
+import { AlertCircle, Brain, Check, Loader2 } from "lucide-react"
 
 interface LoadingBarProps {
-  progress: number
+  phase: 'preparing' | 'uploading' | 'extracting' | 'llm'
   status: string
   error?: string
   fileCount?: number
 }
 
-export function LoadingBar({ progress, status, error, fileCount }: LoadingBarProps) {
-  const [phase, setPhase] = useState<'metadata' | 'llm' | 'error'>('metadata')
-  const [displayedProgress, setDisplayedProgress] = useState(0)
-  const animationRef = useRef<number>()
-  const startTimeRef = useRef<number>()
+export function LoadingBar({ phase, status, error, fileCount = 1 }: LoadingBarProps) {
+  const steps = [
+    { key: 'preparing', label: 'Prepare input' },
+    { key: 'uploading', label: `Read ${fileCount} file${fileCount === 1 ? '' : 's'}` },
+    { key: 'extracting', label: 'Extract conversation' },
+    { key: 'llm', label: 'Generate analysis' },
+  ] as const
 
-  // Decide phase based on "progress" prop or error
-  useEffect(() => {
-    if (error) {
-      setPhase('error')
-      return
-    }
-  }, [progress, error])
-
-  useEffect(() => {
-    if (error) {
-      setPhase('error')
-      return
-    }
-    setPhase(progress >= 50 ? 'llm' : 'metadata')
-  }, [progress, error])
-
-  // Animate progress bar
-  useEffect(() => {
-    if (error) {
-      setDisplayedProgress(0)
-      return
-    }
-
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-    }
-    setDisplayedProgress(0)
-    startTimeRef.current = undefined
-
-    const duration = phase === 'metadata'
-    ? 2000 + ((fileCount ?? 1) * 3500)  // 2s base + 3.5s per file
-    : 13000                     // 15s for LLM
-
-    const target = phase === 'metadata' ? 96 : 99
-
-    const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp
-      const elapsed = timestamp - startTimeRef.current
-      
-      // Add nonlinear easing for better perception
-      const progressRatio = elapsed / duration
-      const easedProgress = progressRatio < 0.9 
-        ? progressRatio * 0.9
-        : 0.81 + (progressRatio - 0.9) * 2
-      
-      const nextVal = Math.min(easedProgress * 100, target)
-      
-      setDisplayedProgress(Math.floor(nextVal))
-      if (nextVal < target) {
-        animationRef.current = requestAnimationFrame(animate)
-      }
-    }
-
-    if (phase !== 'error') {
-      animationRef.current = requestAnimationFrame(animate)
-    }
-
-    return () => {
-      animationRef.current && cancelAnimationFrame(animationRef.current)
-    }
-  }, [phase, fileCount, error])
-
-  // Icons
-  const icons = {
-    metadata: <Loader2 className="w-6 h-6 animate-spin" />,
-    llm: <Brain className="w-6 h-6" />,
-    error: <AlertCircle className="w-6 h-6 text-red-500" />,
-  }
-
-  // Display icon
-  const activeIcon = phase === 'error' ? icons.error : phase === 'llm' ? icons.llm : icons.metadata
-
-  // Display text
-  const displayText = error 
-    ? error 
-    : `${status || "Processing..."} ${phase === 'error' ? "--" : displayedProgress}%`
+  const activeIndex = error
+    ? steps.findIndex(step => step.key === phase)
+    : Math.max(0, steps.findIndex(step => step.key === phase))
+  const progress = error ? ((activeIndex + 1) / steps.length) * 100 : ((activeIndex + 1) / steps.length) * 100
+  const headline = error || status || "Processing conversation"
 
   return (
-    <div className="flex items-center gap-3 p-4 max-w-xl mx-auto">
-      {activeIcon}
-      <div className="wave-text-container font-mono text-lg w-full">
-        {displayText.split('').map((char, i) => (
-          <span
-            key={i}
-            className={`wave-char inline-block ${error ? 'text-red-500' : ''}`}
-            style={{
-              ['--char-index' as string]: i,
-              whiteSpace: 'pre-wrap',
-            } as React.CSSProperties}
-          >
-            {char === ' ' ? '\u00A0' : char}
-          </span>
-        ))}
+    <div className={`mx-auto mt-8 w-full max-w-3xl rounded-[1.5rem] border px-5 py-5 ${error ? 'border-red-500/30 bg-red-500/5' : 'border-white/10 bg-white/[0.03]'}`}>
+      <div className="flex items-center gap-3">
+        {error ? (
+          <AlertCircle className="h-5 w-5 text-red-400" />
+        ) : phase === 'llm' ? (
+          <Brain className="h-5 w-5 text-white" />
+        ) : (
+          <Loader2 className="h-5 w-5 animate-spin text-white" />
+        )}
+        <div className="text-left">
+          <p className={`text-sm font-medium ${error ? 'text-red-300' : 'text-white'}`}>{headline}</p>
+          <p className="text-xs text-zinc-500">
+            {error ? 'The pipeline stopped before completion.' : 'Progress is tied to real pipeline stages.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ${error ? 'bg-red-400' : 'bg-white'}`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-2 md:grid-cols-4">
+        {steps.map((step, index) => {
+          const isComplete = !error && index < activeIndex
+          const isActive = index === activeIndex
+          return (
+            <div
+              key={step.key}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm ${
+                isActive
+                  ? error
+                    ? 'border-red-500/40 bg-red-500/5 text-red-200'
+                    : 'border-white/20 bg-white/8 text-white'
+                  : isComplete
+                    ? 'border-white/10 bg-white/[0.05] text-zinc-200'
+                    : 'border-white/10 bg-transparent text-zinc-500'
+              }`}
+            >
+              {isComplete ? (
+                <Check className="h-4 w-4 shrink-0" />
+              ) : isActive && !error ? (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+              ) : error && isActive ? (
+                <AlertCircle className="h-4 w-4 shrink-0" />
+              ) : (
+                <div className="h-2 w-2 shrink-0 rounded-full bg-current opacity-70" />
+              )}
+              <span>{step.label}</span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

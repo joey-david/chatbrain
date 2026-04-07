@@ -1,0 +1,14 @@
+[Unit]
+Description=ChatBrain
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/applications/chatbrain
+EnvironmentFile=%h/projects/applications/chatbrain/.env
+ExecStart=%h/projects/applications/chatbrain/.venv311/bin/python -m gunicorn -w 1 -b 0.0.0.0:5000 api.api:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

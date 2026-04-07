@@ -1,18 +1,71 @@
-# CHATBRAIN
+# ChatBrain
 
-## Message recognition and OCR
-Using Yolov11 because of how lightweight it is - only checks the image through a single pass, which allows for nearly instant classification on low resources. Finetuned it to detect chat boxes with custom built dataset.
+ChatBrain analyzes exported chat logs or screenshot batches, extracts speaker-separated conversations, computes local metadata, and then sends the cleaned conversation to an LLM for a more ambitious social read.
 
-Ultralytics YOLO11 by Glenn Jocher and Jing Qiu, version 11.0.0, 2024. Available at [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics). ORCID: [0000-0001-5950-6979](https://orcid.org/0000-0001-5950-6979), [0000-0002-7603-6750](https://orcid.org/0000-0002-7603-6750), [0000-0003-3783-7069](https://orcid.org/0000-0003-3783-7069). Licensed under AGPL-3.0.
-https://docs.ultralytics.com/modes/train/#introduction
+## Stack
 
+- `chatbrain/`: Vite + React frontend
+- `api/`: Flask API
+- `backend/local_analysis.py`: text parsing and metadata aggregation
+- `backend/vision/`: screenshot detection + OCR
+- `backend/llm/llm_analysis.py`: prompt construction and JSON-only LLM analysis
 
-### Custom dataset
-Built a finetuning dataset from my own messages, labeled with my `backend/vision/labeling.py` program.
+## Backend setup
 
-## Metrics rating and insight elaboration
-### Inpersonal chat metrics
-Created the `backend/local_analysis.py` pipeline, to extract message, character and contribution metrics.
-### LLM Analysis
-Used advanced prompt engineering to get insightful and precise evaluations of conversations.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+python api/api.py
+```
 
+Useful environment variables:
+
+- `CHATBRAIN_HOST=127.0.0.1`
+- `CHATBRAIN_PORT=5000`
+- `CHATBRAIN_MODEL_PATH=backend/vision/best.pt`
+- `CHATBRAIN_VISION_CONF=0.18`
+- `CHATBRAIN_VISION_IMGSZ=960`
+- `CHATBRAIN_OCR_LANGS=fr,en`
+- `CHATBRAIN_LLM_API_KEY=...`
+- `CHATBRAIN_LLM_BASE_URL=https://api.deepseek.com`
+- `CHATBRAIN_LLM_MODEL=deepseek-chat`
+- `OPENAI_API_KEY=...`
+- `CHATBRAIN_OPENAI_MODEL=gpt-4o-mini`
+
+LLM resolution order:
+
+- Explicit `CHATBRAIN_LLM_*` settings
+- `DEEPSEEK_API_KEY`
+- `OPENAI_API_KEY`
+
+If no usable LLM API key is configured, the metadata path still works but `/llm` will return an error instead of falling back to canned text.
+
+## Frontend setup
+
+```bash
+cd chatbrain
+npm install
+VITE_API_BASE_URL=http://localhost:5000 npm run dev
+```
+
+For production:
+
+```bash
+cd chatbrain
+VITE_API_BASE_URL=https://your-host.example npm run build
+```
+
+## Verification
+
+Run parser and attribution tests:
+
+```bash
+pytest tests
+```
+
+Benchmark bundled screenshots:
+
+```bash
+python backend/benchmark_screenshots.py
+```
